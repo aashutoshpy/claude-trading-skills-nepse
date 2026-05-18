@@ -52,3 +52,9 @@ data/constituents.csv
 data/meroshare_export.csv
 data/nepse_portfolio.csv
 data/cost_basis.csv
+
+# Broker / mutual-fund transaction exports (contain BOID, name, and full
+# transaction history). Drop any new file matching these patterns here.
+data/*.xlsx
+data/*.xls
+data/*transaction*.csv
