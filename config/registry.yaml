@@ -56,8 +56,38 @@ constituents: []
 
 # Margin-eligible names — 123 companies as of April 2026 go-live.
 # Source: SEBON / NEPSE margin-eligibility notice.
-# Empty seed; refresh via the same refresh script.
-margin_eligible_symbols: []
+#
+# Starter seed: ~19 blue chips that have historically been on the
+# margin-eligibility list. ⚠️ This is NOT the full SEBON 123-name list.
+# Verify against SEBON's current notice or your broker's margin-stocks
+# page before relying on margin warnings. See:
+#   common/nepse/references/nepse_starter_watchlist.md
+margin_eligible_symbols:
+  # Commercial banks
+  - NABIL
+  - NICA
+  - EBL
+  - HBL
+  - GBIME
+  - SCB
+  - NMB
+  # Hydropower
+  - UPPER
+  - CHCL
+  - NHPC
+  - AHPC
+  # Microfinance
+  - CBBL
+  - NUBL
+  # Insurance
+  - NLIC
+  - LICN
+  - SICL
+  - NICL
+  # Manufacturing + Telecom
+  - UNL
+  - SHIVM
+  - NTC
 
 # Bikram Sambat → Gregorian quarter-end mapping for FY 2082/83.
 # Listed companies must file quarterly unaudited statements within

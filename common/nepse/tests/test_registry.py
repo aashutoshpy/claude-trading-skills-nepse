@@ -37,7 +37,15 @@ def test_fiscal_year_label_is_current_nepali_FY():
     assert len(r.fiscal_quarter_ends) == 4
 
 
-def test_margin_eligibility_is_empty_until_refresh():
-    # The seed YAML ships with empty list; refresh script populates it.
+def test_margin_eligibility_includes_starter_blue_chips():
+    # The seed YAML ships with a starter set of ~20 known-eligible blue chips
+    # (NABIL, NICA, UPPER, etc.) — not the full SEBON 123-name list. Users
+    # extend it against SEBON's current notice. See:
+    # common/nepse/references/nepse_starter_watchlist.md
     r = Registry.load()
-    assert r.is_margin_eligible("NABIL") is False
+    assert r.is_margin_eligible("NABIL") is True
+    assert r.is_margin_eligible("UPPER") is True
+    assert r.is_margin_eligible("NTC") is True
+    assert r.is_margin_eligible("FAKE_SYMBOL") is False
+    # Sanity: starter is a seed, not the full list.
+    assert 10 <= len(r.margin_eligible_symbols) <= 30

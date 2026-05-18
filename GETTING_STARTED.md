@@ -106,48 +106,60 @@ You don't have to pick now — `nepalstock` is the default. If a script fails wi
 NEPSE_BACKEND=community python3 ...
 ```
 
-### 1.5 ⚠️ CRITICAL: populate `config/registry.yaml`
+### 1.5 Pick a watchlist + (optionally) tune the margin list
 
-[`config/registry.yaml`](config/registry.yaml) holds the list of NEPSE-listed companies and which ones are margin-eligible. **Out of the box, both lists are empty seeds.** Until you fill them in, screeners will return zero results.
+You don't need to fill in the full ~284 NEPSE universe yourself — that comes from the data backend you picked in §1.4 (`NepseClient.list_constituents()` fetches it live). What you do need is two things:
 
-You need to add:
+1. **A watchlist** — 20–30 NEPSE names you'll actually look at and screen each morning. This isn't a registry edit; it's a list of symbols you pass to screeners via `--symbols`.
+2. **A margin-eligible list** — which names are on SEBON's margin-trading circular, so the portfolio tracker's margin warnings work correctly.
 
-1. **`constituents`** — the ~284 NEPSE symbols. Source: [nepalstock.com.np](https://www.nepalstock.com.np) → Company Listed, or [sharesansar.com](https://www.sharesansar.com) → Live Trading.
-2. **`margin_eligible_symbols`** — the 123 margin-eligible names. Source: [SEBON](https://www.sebon.gov.np) margin-trading circular, or your broker's margin-stocks page.
+This repo ships starter versions of both. Use them as-is to get going; refine over time.
 
-Open `config/registry.yaml` in any text editor. You'll see:
+#### Starter watchlist
 
-```yaml
-constituents: []           # <-- you fill this
-margin_eligible_symbols: []  # <-- and this
+[`data/nepse_starter_watchlist.txt`](data/nepse_starter_watchlist.txt) — 26 NEPSE blue chips diversified across 10 sectors:
+
+```
+NABIL, NICA, EBL, HBL, GBIME, SCB, NMB    (Commercial Banks)
+MNBBL                                      (Development Bank)
+CBBL, NUBL                                 (Microfinance)
+UPPER, CHCL, NHPC, AHPC, SHPC              (Hydropower)
+NLIC, LICN                                 (Life Insurance)
+SICL, NICL                                 (Non-Life Insurance)
+SHL, OHL                                   (Hotels)
+UNL, BNL, SHIVM                            (Manufacturing)
+STC                                        (Trading)
+NTC                                        (Others — Nepal Telecom)
 ```
 
-Replace with your lists, formatted as YAML:
+These have been NEPSE blue chips through early 2026 — high turnover, broad investor interest, plenty of historical data. Good practice ground for screeners and chart-checking.
 
-```yaml
-constituents:
-  - symbol: NABIL
-    sector: commercial_bank
-  - symbol: UPPER
-    sector: hydropower
-  - symbol: NICA
-    sector: commercial_bank
-  # ... ~280 more
+Full rationale, sector-by-sector breakdown, and a "second-wave" expansion list (the next 30 names to add once comfortable) live in [`common/nepse/references/nepse_starter_watchlist.md`](common/nepse/references/nepse_starter_watchlist.md).
 
-margin_eligible_symbols:
-  - NABIL
-  - NICA
-  - CHCL
-  # ... ~120 more
-```
+> **Knowledge-cutoff caveat:** these names were prominent through early 2026. Spot-check each on sharesansar.com → Company Profile before relying on them — mergers, delistings, or trading-status changes may have moved things since. The reference doc has details.
 
-The 13 sector codes are already defined further up the file (`commercial_bank`, `development_bank`, `finance`, `microfinance`, `hydropower`, `life_insurance`, `non_life_insurance`, `hotels_tourism`, `manufacturing`, `trading`, `mutual_fund`, `investment`, `others`).
+#### Starter margin-eligible list
 
-**Tip:** Until you have time to paste the full universe, start with just 20–30 names you actually care about. The screeners will only work on what's in the registry.
+[`config/registry.yaml`](config/registry.yaml) ships with ~19 known-eligible blue chips already populated in `margin_eligible_symbols:`. This is **a starter, not the full SEBON 123-name list.** Open the file and look at the `margin_eligible_symbols:` block — those are the names where the portfolio tracker will correctly flag margin positions and compute margin-call distance.
+
+Before relying on margin warnings operationally, verify the list against:
+
+- [SEBON](https://www.sebon.gov.np) → margin-trading circular (authoritative)
+- Your broker's margin-stocks page
+
+Add or remove names in `config/registry.yaml`'s `margin_eligible_symbols:` block as needed.
+
+#### What about `constituents:`?
+
+You'll notice the `constituents:` block in `config/registry.yaml` is empty. **Leave it that way.** The dataclass that loads this file doesn't parse `constituents:` — the universe comes from your backend, not the YAML. Eventually a `scripts/refresh_nepse_registry.py` helper will cache the list there, but for now the empty seed is intentional.
+
+#### Sector codes (if you ever edit `config/registry.yaml`)
+
+The 13 sector IDs are: `BANKING`, `DEVELOPMENT_BANK`, `FINANCE`, `MICROFINANCE`, `HYDROPOWER`, `LIFE_INSURANCE`, `NON_LIFE_INSURANCE`, `HOTELS`, `MANUFACTURING`, `TRADING`, `MUTUAL_FUNDS`, `INVESTMENT`, `OTHERS`. They're UPPER_SNAKE and case-sensitive.
 
 ### 1.6 Smoke test the screener
 
-Run the VCP screener on three names you just added to the registry:
+Run the VCP screener on a handful of names from your watchlist:
 
 ```bash
 python3 skills/nepse-vcp-screener/scripts/screen_nepse_vcp.py \
@@ -201,12 +213,15 @@ Each writes a `.md` + `.json` pair to `reports/`. Open the three `.md` files and
 
 ### Step 2 — Screen for candidates (~5 min)
 
-Only if regime was *go*. Run the VCP screener across your full registry:
+Only if regime was *go*. Run the VCP screener against your watchlist:
 
 ```bash
 python3 skills/nepse-vcp-screener/scripts/screen_nepse_vcp.py \
+  --symbols $(cat data/nepse_starter_watchlist.txt | tr '\n' ' ') \
   --output-dir reports/
 ```
+
+The `$(cat ... | tr '\n' ' ')` part expands the plaintext watchlist into a space-separated symbol list. If you'd rather run the screener across the full backend universe (slower but more thorough), drop the `--symbols` flag entirely.
 
 Open `reports/nepse_vcp_<today>.md`. You'll see a ranked list of names with **VCP setups** — Volatility Contraction Patterns, a classic Mark Minervini setup where price tightens into a base before breaking out.
 
@@ -575,7 +590,7 @@ The vocabulary you'll see in reports, in order of how often it shows up.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| "Screener returned 0 candidates" | `config/registry.yaml` is still empty seeds | Populate `constituents` per [§1.5](#15-️-critical-populate-configregistryyaml) |
+| "Screener returned 0 candidates" | Either: backend can't reach NEPSE (no symbols at all); or `--symbols` was empty/wrong; or there really are no setups today | Run with `--symbols NABIL UPPER NICA` to isolate; if still empty, try `NEPSE_BACKEND=community`. Setup-empty days are normal in weak regimes. |
 | `ModuleNotFoundError: No module named 'yaml'` | Dependencies not installed | `pip install -e .` from the repo root |
 | `python3: command not found` | Python not installed or not on PATH | Install from [python.org](https://www.python.org/downloads/), restart terminal |
 | Backend timeout / scraper error | NEPSE site changed or is down | `NEPSE_BACKEND=community python3 ...` (install with `pip install nepse-api` first) |
