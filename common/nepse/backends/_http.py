@@ -28,7 +28,14 @@ DEFAULT_USER_AGENT = "claude-trading-skills/0.1 (+https://github.com/)"
 
 
 class HttpClient:
-    """Thin requests.Session wrapper. Backend-agnostic."""
+    """Thin requests.Session wrapper. Backend-agnostic.
+
+    `verify=False` disables TLS certificate verification. Only useful as
+    an escape hatch when a server presents a misconfigured cert chain
+    (e.g. missing intermediate). The data we fetch is public market data,
+    so the practical risk is bounded — but a MITM attacker could feed
+    false prices. Use at your own discretion.
+    """
 
     def __init__(
         self,
@@ -38,9 +45,11 @@ class HttpClient:
         timeout_s: int = DEFAULT_TIMEOUT_S,
         retries: int = DEFAULT_RETRIES,
         user_agent: str = DEFAULT_USER_AGENT,
+        verify: bool = True,
     ):
         self.session = requests.Session()
         self.session.headers["User-Agent"] = user_agent
+        self.session.verify = verify
         self.cache = cache or NepseCache()
         self.min_interval_s = min_interval_s
         self.timeout_s = timeout_s

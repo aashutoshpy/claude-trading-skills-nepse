@@ -17,6 +17,8 @@ fake HttpClient via the constructor.
 
 from __future__ import annotations
 
+import os
+import sys
 from datetime import date
 
 from common.nepse.backends._http import HttpClient
@@ -24,6 +26,13 @@ from common.nepse.client import Fundamentals, Ohlcv, Security
 from common.nepse.registry import Registry
 
 _BASE = "https://www.nepalstock.com.np/api"
+
+# Set NEPSE_INSECURE_TLS=1 to disable TLS cert verification when the
+# nepalstock.com.np server is presenting a misconfigured / incomplete
+# cert chain. Public market data, no credentials transmitted — but a
+# MITM attacker could feed false prices. Documented in GETTING_STARTED.md.
+_INSECURE_TLS_ENV = "NEPSE_INSECURE_TLS"
+_TRUTHY = frozenset({"1", "true", "yes", "y", "on"})
 
 # TTLs — tuned for the type of data:
 _TTL_CONSTITUENTS = 24 * 3600   # universe changes rarely
@@ -37,13 +46,31 @@ class NepalstockScraperBackend:
     name = "nepalstock"
 
     def __init__(self, *, http: HttpClient | None = None):
-        self.http = http or HttpClient()
+        if http is None:
+            verify = self._tls_verify_from_env()
+            http = HttpClient(verify=verify)
+        self.http = http
         # Registry is YAML-driven (deterministic + offline) — useful when
         # the universe endpoint is down or rate-limited.
         try:
             self._registry: Registry | None = Registry.load()
         except Exception:
             self._registry = None
+
+    @staticmethod
+    def _tls_verify_from_env() -> bool:
+        """Return whether TLS verification is enabled, honoring NEPSE_INSECURE_TLS."""
+        raw = os.environ.get(_INSECURE_TLS_ENV, "").strip().lower()
+        if raw in _TRUTHY:
+            print(
+                f"WARN: {_INSECURE_TLS_ENV}={raw!r} — disabling TLS verification for "
+                "nepalstock.com.np. Public market data; no credentials transmitted; "
+                "but a MITM attacker could feed false prices. Verify reports against "
+                "sharesansar.com before placing orders.",
+                file=sys.stderr,
+            )
+            return False
+        return True
 
     # ---- universe ---------------------------------------------------------
 

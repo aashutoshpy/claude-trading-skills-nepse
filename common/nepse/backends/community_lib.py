@@ -30,31 +30,49 @@ class CommunityLibBackend:
     name = "community"
 
     def __init__(self):
-        self._impl: Any | None = self._import_first_available()
+        self._impl, self._diag = self._import_first_available()
         if self._impl is None:
+            details = "\n  - ".join(self._diag) if self._diag else "(no diagnostics)"
             raise ImportError(
-                "No supported NEPSE community library is installed. Install one of:\n"
+                "No supported NEPSE community library is installed/importable.\n"
+                f"Tried:\n  - {details}\n"
+                "Install with:\n"
                 "    pip install nepse-api\n"
+                "Note: nepse-api 1.x uses the removed stdlib `cgi` module — on "
+                "Python 3.13+ you also need: pip install legacy-cgi\n"
                 "Or use the default scraper backend instead "
-                "(unset NEPSE_BACKEND or set it to 'nepalstock')."
+                "(unset NEPSE_BACKEND or set it to 'nepalstock', "
+                "optionally with NEPSE_INSECURE_TLS=1 if the live site has a "
+                "broken cert chain)."
             )
 
     @staticmethod
-    def _import_first_available() -> Any | None:
-        try:
-            import nepse_api  # type: ignore
-        except ImportError:
-            pass
-        else:
-            return nepse_api
+    def _import_first_available() -> tuple[Any | None, list[str]]:
+        """Try known community-lib module names. Return (instance, diagnostics)."""
+        diag: list[str] = []
+        # `nepse-api` (PyPI) actually exposes top-level module `nepse`.
+        for mod_name in ("nepse", "nepse_api"):
+            try:
+                m = __import__(mod_name)
+            except ImportError as exc:
+                diag.append(f"import {mod_name}: ImportError: {exc}")
+            except Exception as exc:  # e.g. `cgi` missing on Python 3.13+
+                diag.append(f"import {mod_name}: {type(exc).__name__}: {exc}")
+            else:
+                diag.append(f"import {mod_name}: OK ({m.__file__})")
+                return m, diag
 
         try:
             from Nepse import Nepse as _N  # type: ignore
-            return _N()
-        except ImportError:
-            pass
+        except ImportError as exc:
+            diag.append(f"from Nepse import Nepse: ImportError: {exc}")
+        except Exception as exc:
+            diag.append(f"from Nepse import Nepse: {type(exc).__name__}: {exc}")
+        else:
+            diag.append("from Nepse import Nepse: OK")
+            return _N(), diag
 
-        return None
+        return None, diag
 
     # ---- interface methods --------------------------------------------------
     #

@@ -240,7 +240,7 @@ Expected: **274 tests pass** in well under a second; validator and drift gate bo
 
 Known constraints and known-unknowns — read before relying on outputs for sizing decisions:
 
-1. **`nepalstock.com.np` endpoint shapes are unverified against the live site.** The first real run may need tuning. See `common/nepse/backends/nepalstock_scraper.py`.
+1. **`nepalstock.com.np` scraper backend is not operationally functional against the live site as of 2026-05-18.** The server presents an incomplete TLS chain AND returns `401 UNAUTHORIZED ACCESS` for direct API calls (anti-bot defense — CSRF tokens, etc.). Use `NEPSE_BACKEND=community` (after `pip install nepse-api`) for live data. `NEPSE_INSECURE_TLS=1` solves only the TLS half. Fixing the scraper to handle the 401 (CSRF token flow, session warmup) is a separate engineering effort.
 2. **`Registry.constituents` and `margin_eligible_symbols` are empty seeds.** Populate via the (planned) `scripts/refresh_nepse_registry.py` or by hand. Until populated, universe-driven skills return empty results.
 3. **`_INDEX_IDS` map uses placeholder numeric IDs.** Verify against the live site for `nepse-sector-analyst` and `nepse-ibd-distribution-day-monitor`.
 4. **No machine-readable fundamentals or dividend feed for NEPSE.** Skills that need them accept user-maintained CSVs (see *Per-skill inputs* above).
