@@ -291,9 +291,9 @@ optional_skills:    [<skill-id>, ...]   # may be empty
 related_workflows:  [<workflow-id>, ...]  # non-empty; resolves to workflows/<id>.yaml
 ```
 
-### 3.2 Naming normalization (Vision → category id)
+### 3.2 Naming normalization (category id is canonical)
 
-`PROJECT_VISION.md` §12 lists a `trade-memory-loop` skillset candidate. The
+Earlier project notes listed a `trade-memory-loop` skillset candidate. The
 **category id is `trade-memory`** (a `skills-index.yaml` category); the file is
 `skillsets/trade-memory.yaml`, and `trade-memory-loop` appears under
 `related_workflows`. A skillset id MUST be a skills-index category — never a

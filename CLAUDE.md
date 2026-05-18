@@ -77,11 +77,11 @@ The skill-creator will:
    ```bash
    python3 scripts/generate_skill_docs.py --skill <skill-name>
    ```
-2. **Add to catalog category sections** in `docs/en/skill-catalog.md` and `docs/ja/skill-catalog.md`
-3. **Add to API Requirements Matrix** in both catalog files
-4. **Add to README** descriptions in `README.md` (English) and `README.ja.md` (Japanese)
-5. If the skill requires API keys, add to the API Requirements table in `README.md` and the API要件 section in `README.ja.md`
-6. If a new category is needed, create it in both READMEs and both catalogs
+2. **Add to catalog category sections** in `docs/en/skill-catalog.md` (and `docs/ja/skill-catalog.md` if porting back to upstream)
+3. **Add to API Requirements Matrix** in the catalog file
+4. **Add to README** descriptions in `README.md` (NEPSE-only by convention in this fork)
+5. If the skill requires API keys, add to the API Requirements table in `README.md`
+6. If a new category is needed, create it in both the README and the catalog
 
 > **Pre-commit enforcement:** The `docs-completeness` hook blocks commits if any `skills/*/SKILL.md` exists without corresponding `docs/en/skills/<name>.md` and `docs/ja/skills/<name>.md`. Run the generate command above to fix.
 
@@ -128,7 +128,7 @@ Required sections for ★ guides:
 | Index table (`docs/{en,ja}/skills/index.md`) | ✅ | -- |
 | Catalog category section (`docs/{en,ja}/skill-catalog.md`) | -- | ✅ |
 | Catalog API Requirements Matrix | -- | ✅ |
-| README.md / README.ja.md | -- | ✅ |
+| README.md (catalog block) | ✅ (`scripts/generate_catalog_from_index.py`) | -- |
 
 See `docs/README.md` for frontmatter format, badge syntax, and complete checklist.
 
@@ -975,8 +975,8 @@ Files that contain secrets (`.mcp.json`, `.envrc`) must be listed in `.gitignore
 - All SKILL.md files are in English
 - Analysis outputs are in English
 - Some reference materials (Stanley Druckenmiller Investment) include Japanese content
-- README files available in both English (README.md) and Japanese (README.ja.md)
-- User interactions may be in Japanese; analysis outputs remain in English
+- README is English-only in this NEPSE fork
+- User interactions may be in English or Nepali; analysis outputs remain in English
 
 ## Distribution Workflow
 
@@ -985,10 +985,10 @@ When skills are ready for distribution:
 1. Test skill thoroughly in Claude Code
 2. Package skill using skill-creator packaging script
 3. Move .skill file to `skill-packages/`
-4. Update README.md and README.ja.md with skill description
-   - **Important:** Clearly indicate if the skill requires API subscriptions (FMP, FINVIZ Elite)
-   - Include pricing information and sign-up links for required APIs
-   - Specify if APIs are required, optional, or not needed
+4. Update README.md with skill description
+   - **Important:** Clearly indicate if the skill requires user-supplied CSVs (dividends, fundamentals, macro, portfolio)
+   - Note backend requirements (default `nepalstock` scraper vs `community` backend)
+   - Specify which inputs are required, recommended, or optional
 5. Commit changes with descriptive message
 
 ZIP packages allow Claude web app users to upload and use skills without cloning the repository.

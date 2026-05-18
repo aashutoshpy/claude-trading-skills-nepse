@@ -42,6 +42,10 @@ def make_skill(skill_id: str, category: str = "core-portfolio", **overrides) -> 
         ],
         "timeframe": "weekly",
         "difficulty": "intermediate",
+        # NEPSE fork: the catalog-en renderer filters skills to those that
+        # declare `markets: [NEPSE]`. Default test skills to NEPSE so existing
+        # rendering tests exercise the production code path.
+        "markets": ["NEPSE"],
     }
     base.update(overrides)
     return base
@@ -101,9 +105,8 @@ More text below the matrix.
 
 
 def write_all_targets(project_root: Path) -> None:
-    """Create README.md + README.ja.md + CLAUDE.md with their sentinels."""
+    """Create README.md + CLAUDE.md with their sentinels."""
     write_readme(project_root, name="README.md", sentinel="catalog-en")
-    write_readme(project_root, name="README.ja.md", sentinel="catalog-ja")
     write_claude_md(project_root)
 
 

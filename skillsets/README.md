@@ -32,7 +32,7 @@ Navigator keeps returning an honest gap (`manifest_status: deferred`) for those.
 
 ## Naming: category id is canonical
 
-`PROJECT_VISION.md` §12 lists a `trade-memory-loop` skillset candidate. The
+Earlier project notes listed a `trade-memory-loop` skillset candidate. The
 **category id is `trade-memory`** (the `skills-index.yaml` category); the file
 is `skillsets/trade-memory.yaml`. The `trade-memory-loop` *workflow* is listed
 under `related_workflows`. **Never create `skillsets/trade-memory-loop.yaml`** —

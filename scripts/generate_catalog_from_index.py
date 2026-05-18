@@ -123,6 +123,18 @@ def _escape_table_cell(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _is_nepse_skill(skill: dict) -> bool:
+    """NEPSE-fork filter: include only skills that declare `markets: [NEPSE]`.
+
+    Forks for other markets can replicate this filter with a different
+    market name. The upstream catalog generator showed every skill in the
+    index; this fork restricts the README catalog to NEPSE-specific skills
+    so the user-facing front page stays focused.
+    """
+    markets = skill.get("markets") or []
+    return "NEPSE" in markets
+
+
 def render_catalog_en(skills: list[dict]) -> str:
     buf = io.StringIO()
     buf.write(
@@ -130,6 +142,7 @@ def render_catalog_en(skills: list[dict]) -> str:
         "scripts/generate_catalog_from_index.py. Do not edit by hand — "
         "edit the index and re-run the generator. -->\n\n"
     )
+    skills = [s for s in skills if _is_nepse_skill(s)]
     buckets = group_by_category(skills)
     for cat in [
         "market-regime",
@@ -317,7 +330,6 @@ def rewrite_file(path: Path, skills: list[dict]) -> tuple[str, str]:
 
 TARGETS = [
     ("README.md", {"catalog-en"}),
-    ("README.ja.md", {"catalog-ja"}),
     ("CLAUDE.md", {"api-matrix"}),
 ]
 
