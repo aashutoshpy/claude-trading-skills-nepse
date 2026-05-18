@@ -9,6 +9,8 @@ A Claude Skills toolkit for trading the **Nepal Stock Exchange (NEPSE)**. 27 ski
 
 This is a fork of [tradermonty/claude-trading-skills](https://github.com/tradermonty/claude-trading-skills) adapted for the Nepal Stock Exchange. The original US-market skills are retained in the repo but are not exposed in this README — see [`docs/en/skill-catalog.md`](docs/en/skill-catalog.md) if you need them.
 
+> **New to this repo?** Start with [GETTING_STARTED.md](GETTING_STARTED.md) — a step-by-step walkthrough for amateur traders with a MeroShare + broker account, covering setup, the daily 30-minute routine, weekly portfolio review, and a jargon glossary.
+
 ---
 
 ## Quick Start
