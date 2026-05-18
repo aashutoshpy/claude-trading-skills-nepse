@@ -248,6 +248,29 @@ The table below is **auto-generated** from `skills-index.yaml` by `scripts/gener
 | **Market Environment Analysis** | ❌ Not used | ❌ Not used | ❌ Not used | Global market data via WebSearch / WebFetch; Optional chart image inputs for technical interpretation |
 | **Market News Analyst** | ❌ Not used | ❌ Not used | ❌ Not used | Web search / fetch |
 | **Market Top Detector** | ❌ Not used | ❌ Not used | ❌ Not used | Public market data CSVs; no API key required |
+| **NEPSE Breakout Trade Planner** | ❌ Not used | ❌ Not used | ❌ Not used | Reads nepse-vcp-screener JSON output |
+| **NEPSE CANSLIM Screener** | ❌ Not used | ❌ Not used | ❌ Not used | OHLCV + NEPSE composite index via common.nepse.NepseClient; EPS/sales growth CSV from sharesansar (C and A factors); Reads nepse-uptrend-analyzer JSON for the M factor |
+| **NEPSE Capital Gains Tax Notes** | ❌ Not used | ❌ Not used | ❌ Not used | Reads tax rates from config/nepse_rules.yaml |
+| **NEPSE Downtrend Duration Analyzer** | ❌ Not used | ❌ Not used | ❌ Not used | NEPSE composite index OHLCV via common.nepse.NepseClient |
+| **NEPSE Earnings Calendar** | ❌ Not used | ❌ Not used | ❌ Not used | Reads Nepali FY quarter-ends from config/registry.yaml; Per-company announcement dates from sharesansar/merolagani |
+| **NEPSE Earnings Trade Analyzer** | ❌ Not used | ❌ Not used | ❌ Not used | OHLCV via common.nepse.NepseClient |
+| **NEPSE Edge Candidate Agent** | ❌ Not used | ❌ Not used | ❌ Not used | Full-universe OHLCV via common.nepse.NepseClient |
+| **NEPSE Edge Signal Aggregator** | ❌ Not used | ❌ Not used | ❌ Not used | Reads YAML tickets from nepse-edge-candidate-agent |
+| **NEPSE Edge Strategy Designer** | ❌ Not used | ❌ Not used | ❌ Not used | Reads nepse-edge-signal-aggregator JSON |
+| **NEPSE IBD Distribution Day Monitor** | ❌ Not used | ❌ Not used | ❌ Not used | NEPSE composite index OHLCV via common.nepse.NepseClient |
+| **NEPSE Kanchi Dividend SOP** | ❌ Not used | ❌ Not used | ❌ Not used | Reads nepse-value-dividend-screener JSON |
+| **NEPSE Macro Regime Detector** | ❌ Not used | ❌ Not used | ❌ Not used | User-maintained CSV of NRB rate + global macro values (key,value,as_of); Reads JSON from nepse-market-breadth-analyzer and nepse-sector-analyst |
+| **NEPSE Margin Eligibility** | ❌ Not used | ❌ Not used | ❌ Not used | Reads config/nepse_rules.yaml + config/registry.yaml |
+| **NEPSE Market Breadth Analyzer** | ❌ Not used | ❌ Not used | ❌ Not used | Full-universe OHLCV via common.nepse.NepseClient |
+| **NEPSE Market Top Detector** | ❌ Not used | ❌ Not used | ❌ Not used | Reads JSON from nepse-ibd-distribution-day-monitor, nepse-uptrend-analyzer, nepse-sector-analyst, nepse-market-breadth-analyzer |
+| **NEPSE Portfolio Tracker** | ❌ Not used | ❌ Not used | ❌ Not used | Hand-maintained or MeroShare-exported portfolio CSV; Optional live-price lookup via common.nepse.NepseClient |
+| **NEPSE Sector Analyst** | ❌ Not used | ❌ Not used | ❌ Not used | Sector-index OHLCV via common.nepse.NepseClient |
+| **NEPSE Stanley Druckenmiller Investment** | ❌ Not used | ❌ Not used | ❌ Not used | Reads JSON from nepse-macro-regime-detector, nepse-uptrend-analyzer, nepse-market-breadth-analyzer, nepse-sector-analyst, nepse-market-top-detector, nepse-ibd-distribution-day-monitor |
+| **NEPSE Technical Analyst** | ❌ Not used | ❌ Not used | ❌ Not used | User provides chart screenshot |
+| **NEPSE Theme Detector** | ❌ Not used | ❌ Not used | ❌ Not used | Reads nepse-sector-analyst, nepse-market-breadth-analyzer, nepse-macro-regime-detector, nepse-uptrend-analyzer JSON; Optional user-supplied themes added to the built-in library |
+| **NEPSE Uptrend Analyzer** | ❌ Not used | ❌ Not used | ❌ Not used | Full-universe OHLCV + composite index via common.nepse.NepseClient |
+| **NEPSE VCP Screener** | ❌ Not used | ❌ Not used | ❌ Not used | OHLCV via common.nepse.NepseClient (nepalstock scraper or community lib) |
+| **NEPSE Value + Dividend Screener** | ❌ Not used | ❌ Not used | ❌ Not used | OHLCV via common.nepse.NepseClient; User-pasted CSV from sharesansar/merolagani (symbol, cash_div_pct, bonus_div_pct) |
 | **Options Strategy Advisor** | 🟡 Optional | ❌ Not used | ❌ Not used | Financial Modeling Prep API |
 | **PEAD Screener** | ✅ Required | ❌ Not used | ❌ Not used | Financial Modeling Prep API |
 | **Pair Trade Screener** | ✅ Required | ❌ Not used | ❌ Not used | Financial Modeling Prep API |
@@ -760,6 +783,32 @@ These skills fetch future events via FMP API:
 **Market Implications:** Analysis...
 ```
 
+### NEPSE Skills (Nepal Stock Exchange)
+
+A parallel suite of 26 NEPSE-specific skills lives under `skills/nepse-*/`. They share a foundation package `common/nepse/` and read from `config/nepse_rules.yaml` + `config/registry.yaml`.
+
+**Foundation:**
+- [`common/nepse/`](common/nepse/) — `NepseClient` interface, `nepalstock`/`community` backends, disk cache, registry, trading calendar (Mon-Fri 11:00-15:00 NPT post-2025), 15% daily price band, AMO 18:00-06:00
+- [`config/nepse_rules.yaml`](config/nepse_rules.yaml) + [`config/registry.yaml`](config/registry.yaml) — single source of truth for changeable rules; never hardcode
+
+**Selection (when to use which):**
+- Market regime: `nepse-market-breadth-analyzer`, `nepse-uptrend-analyzer`, `nepse-sector-analyst`, `nepse-ibd-distribution-day-monitor`, `nepse-market-top-detector`, `nepse-macro-regime-detector`
+- Screening: `nepse-vcp-screener`, `nepse-canslim-screener`, `nepse-value-dividend-screener`
+- Trade planning: `nepse-breakout-trade-planner`, `nepse-margin-eligibility`, `nepse-earnings-calendar`, `nepse-earnings-trade-analyzer`
+- Portfolio: `nepse-portfolio-tracker`, `nepse-kanchi-dividend-sop`, `nepse-capital-gains-tax-notes`
+- Research / edge: `nepse-theme-detector`, `nepse-stanley-druckenmiller-investment`, `nepse-edge-candidate-agent`, `nepse-edge-signal-aggregator`, `nepse-edge-strategy-designer`, `nepse-downtrend-duration-analyzer`
+- Chart-image: `nepse-technical-analyst`
+
+**Defaults / configuration:**
+- Default backend: `nepalstock` (scraper) — override via `NEPSE_BACKEND=community` or `--backend`
+- Skills also work with the existing market-agnostic skills: `position-sizer`, `trader-memory-core`, `signal-postmortem`, `exposure-coach`, `data-quality-checker`, `backtest-expert`
+
+**Documentation:** EN only (no JA stubs auto-generated). The doc generator + pre-commit hook skip JA for `nepse-*` skills.
+
+**US-skill equivalents that have no NEPSE port** (see each US skill's SKILL.md for the rationale): `options-strategy-advisor`, `pair-trade-screener`, `us-market-bubble-detector`, `institutional-flow-tracker`, `ftd-detector`, `market-environment-analysis`, `economic-calendar-fetcher`.
+
+See [`workflows/nepse-*.yaml`](workflows/) for the canonical NEPSE workflows and `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md` for the full adaptation plan.
+
 ## Multi-Skill Workflows
 
 > **Canonical source:** `workflows/*.yaml` is the authoritative definition of multi-skill workflows for the Core + Satellite primary user. The prose examples below are quickstart sketches only — if any block here disagrees with a manifest in `workflows/`, the YAML is correct. See [`workflows/README.md`](workflows/README.md) for the manifest schema and `docs/dev/metadata-and-workflow-schema.md` for the full validator rules.
@@ -773,6 +822,16 @@ These skills fetch future events via FMP API:
 | [`swing-opportunity-daily`](workflows/swing-opportunity-daily.yaml) | daily | vcp-screener, technical-analyst, position-sizer, trader-memory-core |
 | [`trade-memory-loop`](workflows/trade-memory-loop.yaml) | per closed trade | trader-memory-core, signal-postmortem |
 | [`monthly-performance-review`](workflows/monthly-performance-review.yaml) | monthly | trader-memory-core, signal-postmortem |
+
+### NEPSE workflows (Nepal Stock Exchange)
+
+| Workflow | Cadence | Required skills |
+|---|---|---|
+| [`nepse-market-regime-daily`](workflows/nepse-market-regime-daily.yaml) | daily | nepse-market-breadth-analyzer, nepse-uptrend-analyzer, nepse-sector-analyst |
+| [`nepse-swing-opportunity-daily`](workflows/nepse-swing-opportunity-daily.yaml) | daily | nepse-vcp-screener, position-sizer, nepse-breakout-trade-planner |
+| [`nepse-core-portfolio-weekly`](workflows/nepse-core-portfolio-weekly.yaml) | weekly | nepse-portfolio-tracker, exposure-coach |
+| [`nepse-trade-memory-loop`](workflows/nepse-trade-memory-loop.yaml) | per trade | trader-memory-core |
+| [`nepse-quarterly-results-review`](workflows/nepse-quarterly-results-review.yaml) | quarterly | nepse-earnings-calendar, nepse-earnings-trade-analyzer, trader-memory-core |
 
 ### Quickstart prose examples (NOT canonical)
 
