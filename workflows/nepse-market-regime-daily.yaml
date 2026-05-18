@@ -1,0 +1,126 @@
+schema_version: 1
+id: nepse-market-regime-daily
+display_name: NEPSE Market Regime Daily
+cadence: daily
+estimated_minutes: 20
+target_users:
+  - part-time-swing-trader
+  - growth-investor
+difficulty: intermediate
+api_profile: no-api-basic
+markets:
+  - NEPSE
+
+when_to_run: >-
+  Before NEPSE market open (11:00 NPT) or in the first 30 minutes after.
+  This workflow informs sizing for the day's swing-trade decisions.
+when_not_to_run: >-
+  Do not use any single output as a standalone buy/sell signal. Combine the
+  regime, top-risk, and macro reads to inform posture, not directives.
+
+required_skills:
+  - nepse-market-breadth-analyzer
+  - nepse-uptrend-analyzer
+  - nepse-sector-analyst
+optional_skills:
+  - nepse-ibd-distribution-day-monitor
+  - nepse-market-top-detector
+  - nepse-macro-regime-detector
+  - nepse-stanley-druckenmiller-investment
+  - nepse-theme-detector
+  - nepse-downtrend-duration-analyzer
+  - nepse-edge-candidate-agent
+  - nepse-edge-signal-aggregator
+  - nepse-edge-strategy-designer
+
+artifacts:
+  - id: nepse_breadth_report
+    produced_by_step: 1
+    required: true
+    downstream_hints:
+      - nepse-swing-opportunity-daily
+  - id: nepse_uptrend_report
+    produced_by_step: 2
+    required: true
+  - id: nepse_sectors_report
+    produced_by_step: 3
+    required: true
+  - id: nepse_top_risk_report
+    produced_by_step: 4
+    required: false
+  - id: nepse_macro_regime_report
+    produced_by_step: 5
+    required: false
+  - id: nepse_druckenmiller_bias
+    produced_by_step: 6
+    required: false
+
+steps:
+  - step: 1
+    name: Analyze NEPSE breadth
+    skill: nepse-market-breadth-analyzer
+    produces:
+      - nepse_breadth_report
+    decision_gate: false
+
+  - step: 2
+    name: Analyze NEPSE uptrend ratio
+    skill: nepse-uptrend-analyzer
+    produces:
+      - nepse_uptrend_report
+    decision_gate: false
+
+  - step: 3
+    name: Rank NEPSE sectors
+    skill: nepse-sector-analyst
+    produces:
+      - nepse_sectors_report
+    decision_gate: false
+
+  - step: 4
+    name: Check NEPSE top risk
+    skill: nepse-market-top-detector
+    optional: true
+    consumes:
+      - nepse_breadth_report
+      - nepse_uptrend_report
+      - nepse_sectors_report
+    produces:
+      - nepse_top_risk_report
+    decision_gate: false
+
+  - step: 5
+    name: Assess macro regime
+    skill: nepse-macro-regime-detector
+    optional: true
+    consumes:
+      - nepse_breadth_report
+      - nepse_sectors_report
+    produces:
+      - nepse_macro_regime_report
+    decision_gate: false
+
+  - step: 6
+    name: Synthesize Druckenmiller-style bias
+    skill: nepse-stanley-druckenmiller-investment
+    optional: true
+    consumes:
+      - nepse_breadth_report
+      - nepse_uptrend_report
+      - nepse_sectors_report
+      - nepse_top_risk_report
+      - nepse_macro_regime_report
+    produces:
+      - nepse_druckenmiller_bias
+    decision_gate: true
+    decision_question: >-
+      Given today's NEPSE breadth, uptrend, sector rotation, top-risk and
+      macro regime, what portfolio tilt is appropriate (STRONG_BIAS_LONG /
+      BIAS_LONG / NEUTRAL / BIAS_DEFENSIVE / STRONG_DEFENSIVE)?
+
+manual_review:
+  - Confirm output is not used as a buy/sell signal.
+  - If bias is BIAS_DEFENSIVE or STRONG_DEFENSIVE, defer nepse-swing-opportunity-daily.
+  - Cross-check sector leadership with nepse-theme-detector before committing to a thesis.
+
+journal_destination: trader-memory-core

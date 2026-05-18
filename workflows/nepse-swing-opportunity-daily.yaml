@@ -1,0 +1,109 @@
+schema_version: 1
+id: nepse-swing-opportunity-daily
+display_name: NEPSE Swing Opportunity Daily
+cadence: daily
+estimated_minutes: 30
+target_users:
+  - part-time-swing-trader
+difficulty: intermediate
+api_profile: no-api-basic
+markets:
+  - NEPSE
+
+when_to_run: >-
+  After nepse-market-regime-daily has produced a non-defensive bias.
+  Generates today's NEPSE candidate list, runs a chart-level confirmation,
+  sizes the trades, and produces manual-entry plans for the broker.
+when_not_to_run: >-
+  Skip when regime bias is BIAS_DEFENSIVE or STRONG_DEFENSIVE.
+  Skip when nepse-market-top-detector is HIGH or EXTREME.
+
+required_skills:
+  - nepse-vcp-screener
+  - position-sizer
+  - nepse-breakout-trade-planner
+optional_skills:
+  - nepse-technical-analyst
+  - nepse-canslim-screener
+  - nepse-earnings-trade-analyzer
+  - nepse-margin-eligibility
+  - nepse-earnings-calendar
+  - trader-memory-core
+
+artifacts:
+  - id: nepse_vcp_candidates
+    produced_by_step: 1
+    required: true
+  - id: nepse_canslim_candidates
+    produced_by_step: 2
+    required: false
+  - id: nepse_technical_report
+    produced_by_step: 3
+    required: false
+  - id: nepse_position_size
+    produced_by_step: 4
+    required: true
+  - id: nepse_trade_plan
+    produced_by_step: 5
+    required: true
+    downstream_hints:
+      - nepse-trade-memory-loop
+
+steps:
+  - step: 1
+    name: Screen NEPSE VCP candidates
+    skill: nepse-vcp-screener
+    produces:
+      - nepse_vcp_candidates
+    decision_gate: false
+
+  - step: 2
+    name: Cross-check with CANSLIM
+    skill: nepse-canslim-screener
+    optional: true
+    produces:
+      - nepse_canslim_candidates
+    decision_gate: false
+
+  - step: 3
+    name: Technical chart confirmation (top 3-5 candidates)
+    skill: nepse-technical-analyst
+    optional: true
+    consumes:
+      - nepse_vcp_candidates
+    produces:
+      - nepse_technical_report
+    decision_gate: true
+    decision_question: >-
+      Do the chart structures of the top candidates confirm the screener
+      finding (Stage 2 trend, tight base, volume drying up)?
+
+  - step: 4
+    name: Size positions with risk budget
+    skill: position-sizer
+    consumes:
+      - nepse_vcp_candidates
+      - nepse_technical_report
+    produces:
+      - nepse_position_size
+    decision_gate: false
+
+  - step: 5
+    name: Generate manual-entry trade plans
+    skill: nepse-breakout-trade-planner
+    consumes:
+      - nepse_vcp_candidates
+      - nepse_position_size
+    produces:
+      - nepse_trade_plan
+    decision_gate: true
+    decision_question: >-
+      Are the entry, stop, and target levels acceptable given current
+      regime, sector rotation, and margin status (if leveraging)?
+
+manual_review:
+  - Cross-reference each candidate against nepse-margin-eligibility before sizing for margin.
+  - Verify upcoming earnings dates via nepse-earnings-calendar (avoid trading into a report).
+  - Register accepted plans as theses via trader-memory-core.
+
+journal_destination: trader-memory-core

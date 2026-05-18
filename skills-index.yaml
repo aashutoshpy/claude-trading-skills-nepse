@@ -1155,3 +1155,561 @@ skills:
   workflows:
   - swing-opportunity-daily
   hand_written_doc: false
+- id: nepse-vcp-screener
+  display_name: NEPSE VCP Screener
+  category: swing-opportunity
+  status: beta
+  summary: Screen the NEPSE universe for Minervini-style Volatility Contraction Patterns, calibrated for the 15% daily price band introduced April 2026.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: OHLCV via common.nepse.NepseClient (nepalstock scraper or community lib)
+  inputs:
+  - nepse_ohlcv
+  - nepse_universe
+  outputs:
+  - vcp_candidates
+  - pivot_points
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-technical-analyst
+  display_name: NEPSE Technical Analyst
+  category: swing-opportunity
+  status: beta
+  summary: Chart-image-driven technical analysis tuned for NEPSE microstructure (15% band, circuit-hit bars, bonus-share gaps, illiquid no-trade days).
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: user_image
+    type: image
+    requirement: required
+    note: User provides chart screenshot
+  inputs:
+  - chart_screenshot
+  outputs:
+  - technical_analysis_report
+  - scenario_plan
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-market-breadth-analyzer
+  display_name: NEPSE Market Breadth Analyzer
+  category: market-regime
+  status: beta
+  summary: Compute NEPSE breadth indicators (A/D, new 52w highs/lows, % above 50/200-SMA, sector participation) across the ~284-name universe.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: Full-universe OHLCV via common.nepse.NepseClient
+  inputs:
+  - nepse_universe_ohlcv
+  outputs:
+  - breadth_indicators
+  - regime_label
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-sector-analyst
+  display_name: NEPSE Sector Analyst
+  category: market-regime
+  status: beta
+  summary: Rank NEPSE's 13 sector indices by trailing returns and classify each sector's stage. Identifies leaders, laggards, and rotation patterns.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: Sector-index OHLCV via common.nepse.NepseClient
+  inputs:
+  - nepse_sector_indices
+  outputs:
+  - sector_ranking
+  - rotation_signals
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-value-dividend-screener
+  display_name: NEPSE Value + Dividend Screener
+  category: core-portfolio
+  status: beta
+  summary: Screen NEPSE for high cash+bonus dividend yield using a user-supplied dividend CSV (NEPSE backends do not expose structured dividends).
+  timeframe: weekly
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: OHLCV via common.nepse.NepseClient
+  - id: user_dividends_csv
+    type: local_file
+    requirement: recommended
+    note: User-pasted CSV from sharesansar/merolagani (symbol, cash_div_pct, bonus_div_pct)
+  inputs:
+  - nepse_ohlcv
+  - dividend_csv
+  outputs:
+  - dividend_candidates
+  workflows:
+  - nepse-core-portfolio-weekly
+  hand_written_doc: false
+- id: nepse-uptrend-analyzer
+  display_name: NEPSE Uptrend Analyzer
+  category: market-regime
+  status: beta
+  summary: Compute the NEPSE Uptrend Ratio (% of names above their 200-day SMA), track its 1-year history, classify regime, and flag breadth divergence vs the NEPSE composite.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: Full-universe OHLCV + composite index via common.nepse.NepseClient
+  inputs:
+  - nepse_universe_ohlcv
+  - nepse_composite_index
+  outputs:
+  - uptrend_ratio
+  - regime_label
+  - divergence_flag
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-ibd-distribution-day-monitor
+  display_name: NEPSE IBD Distribution Day Monitor
+  category: market-regime
+  status: beta
+  summary: Apply IBD-style distribution day rules to the NEPSE composite — count active down-on-higher-volume sessions in a 25-session rolling window.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: NEPSE composite index OHLCV via common.nepse.NepseClient
+  inputs:
+  - nepse_composite_index
+  outputs:
+  - distribution_day_count
+  - severity_level
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-market-top-detector
+  display_name: NEPSE Market Top Detector
+  category: market-regime
+  status: beta
+  summary: Aggregate distribution-day count, breadth divergence, microfinance over-leadership, sector concentration, and ATH proximity into a composite top-risk score and warning level.
+  timeframe: daily
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads JSON from nepse-ibd-distribution-day-monitor, nepse-uptrend-analyzer, nepse-sector-analyst, nepse-market-breadth-analyzer
+  inputs:
+  - distribution_days_json
+  - uptrend_json
+  - sectors_json
+  - breadth_json
+  outputs:
+  - top_risk_score
+  - warning_level
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-macro-regime-detector
+  display_name: NEPSE Macro Regime Detector
+  category: market-regime
+  status: beta
+  summary: Combine NRB monetary policy, USD/NPR, Nifty 50, Brent, gold, and NEPSE breadth/sector signals into a coarse RISK_ON / NEUTRAL / RISK_OFF / STAGFLATION regime label.
+  timeframe: daily
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: user_macro_csv
+    type: local_file
+    requirement: recommended
+    note: User-maintained CSV of NRB rate + global macro values (key,value,as_of)
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads JSON from nepse-market-breadth-analyzer and nepse-sector-analyst
+  inputs:
+  - macro_csv
+  - breadth_json
+  - sectors_json
+  outputs:
+  - macro_regime_label
+  - rationale
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-margin-eligibility
+  display_name: NEPSE Margin Eligibility
+  category: trade-planning
+  status: beta
+  summary: Check if a NEPSE ticker is on the 123-name margin-eligible list (live April 2026) and compute margin-call distance for a given position.
+  timeframe: event-driven
+  difficulty: beginner
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_config
+    type: local_file
+    requirement: required
+    note: Reads config/nepse_rules.yaml + config/registry.yaml
+  inputs:
+  - symbol
+  - position_details
+  outputs:
+  - eligibility_flag
+  - margin_call_price
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-earnings-calendar
+  display_name: NEPSE Earnings Calendar
+  category: trade-planning
+  status: beta
+  summary: Generate NEPSE quarterly-results calendar from Nepali FY (statutory T+30 windows after Ashwin/Poush/Chaitra/Ashadh quarter-ends), optionally enriched with per-company announcement CSV.
+  timeframe: weekly
+  difficulty: beginner
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_config
+    type: local_file
+    requirement: required
+    note: Reads Nepali FY quarter-ends from config/registry.yaml
+  - id: user_earnings_csv
+    type: local_file
+    requirement: optional
+    note: Per-company announcement dates from sharesansar/merolagani
+  inputs:
+  - fiscal_year_quarters
+  - earnings_csv
+  outputs:
+  - quarter_windows
+  - company_announcements
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-breakout-trade-planner
+  display_name: NEPSE Breakout Trade Planner
+  category: trade-planning
+  status: beta
+  summary: Convert nepse-vcp-screener candidates into manual-entry breakout trade plans — entry trigger, stop-loss, 1R/2R/3R targets, risk-based share count, and AMO queue instructions.
+  timeframe: daily
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads nepse-vcp-screener JSON output
+  inputs:
+  - vcp_candidates_json
+  - account_size
+  - risk_pct
+  outputs:
+  - trade_plans
+  - amo_instructions
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-earnings-trade-analyzer
+  display_name: NEPSE Earnings Trade Analyzer
+  category: trade-planning
+  status: beta
+  summary: Score NEPSE post-quarterly-result reactions with the 5-factor framework (gap %, trend stage, volume surge, MA200/MA50 distance), recalibrated for NEPSE's 15% daily price band.
+  timeframe: event-driven
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: OHLCV via common.nepse.NepseClient
+  inputs:
+  - symbol
+  - report_date
+  - nepse_ohlcv
+  outputs:
+  - earnings_score
+  - rating
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-portfolio-tracker
+  display_name: NEPSE Portfolio Tracker
+  category: core-portfolio
+  status: beta
+  summary: Track a NEPSE portfolio from MeroShare CSV/manual entries — per-position P&L, sector concentration, margin usage warnings cross-referenced with the eligible-name list.
+  timeframe: weekly
+  difficulty: beginner
+  markets:
+  - NEPSE
+  integrations:
+  - id: user_portfolio_csv
+    type: local_file
+    requirement: required
+    note: Hand-maintained or MeroShare-exported portfolio CSV
+  - id: nepse_client
+    type: market_data
+    requirement: optional
+    note: Optional live-price lookup via common.nepse.NepseClient
+  inputs:
+  - portfolio_csv
+  - current_prices
+  outputs:
+  - portfolio_snapshot
+  - sector_concentration
+  - margin_warnings
+  workflows:
+  - nepse-core-portfolio-weekly
+  hand_written_doc: false
+- id: nepse-canslim-screener
+  display_name: NEPSE CANSLIM Screener
+  category: swing-opportunity
+  status: beta
+  summary: CANSLIM 7-factor screening for NEPSE. C+A from user fundamentals CSV; N+S+L+I from OHLCV/floorsheet; M gated by nepse-uptrend-analyzer. Sector-cap default 5 prevents hydropower domination.
+  timeframe: weekly
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: OHLCV + NEPSE composite index via common.nepse.NepseClient
+  - id: user_fundamentals_csv
+    type: local_file
+    requirement: recommended
+    note: EPS/sales growth CSV from sharesansar (C and A factors)
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads nepse-uptrend-analyzer JSON for the M factor
+  inputs:
+  - nepse_ohlcv
+  - fundamentals_csv
+  - uptrend_json
+  outputs:
+  - canslim_candidates
+  - per_factor_scores
+  workflows:
+  - nepse-swing-opportunity-daily
+  hand_written_doc: false
+- id: nepse-capital-gains-tax-notes
+  display_name: NEPSE Capital Gains Tax Notes
+  category: trade-planning
+  status: beta
+  summary: Estimate Nepal capital gains tax on NEPSE share trades (5% long-term >365 days, 7.5% short-term) with optional batch CSV processing and exit-timing guidance for the LT threshold.
+  timeframe: event-driven
+  difficulty: beginner
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_config
+    type: local_file
+    requirement: required
+    note: Reads tax rates from config/nepse_rules.yaml
+  inputs:
+  - trade_details
+  outputs:
+  - tax_estimate
+  - lt_threshold_guidance
+  workflows:
+  - nepse-trade-memory-loop
+  hand_written_doc: false
+- id: nepse-downtrend-duration-analyzer
+  display_name: NEPSE Downtrend Duration Analyzer
+  category: market-regime
+  status: beta
+  summary: Identify historical NEPSE composite drawdowns, measure peak-to-trough and trough-to-recovery durations, and produce a distribution to contextualize current pullbacks.
+  timeframe: weekly
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: NEPSE composite index OHLCV via common.nepse.NepseClient
+  inputs:
+  - nepse_composite_index
+  outputs:
+  - drawdown_history
+  - duration_distribution
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-kanchi-dividend-sop
+  display_name: NEPSE Kanchi Dividend SOP
+  category: core-portfolio
+  status: beta
+  summary: Apply Kanchi's 5-step dividend investing method to NEPSE — sector-aware quality scoring (BFI / insurance preferred), cash-vs-bonus split awareness, pullback entry planning around the Bhadra-Mangsir AGM cycle.
+  timeframe: weekly
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads nepse-value-dividend-screener JSON
+  inputs:
+  - dividend_candidates_json
+  outputs:
+  - kanchi_quality_scores
+  - entry_plan
+  workflows:
+  - nepse-core-portfolio-weekly
+  hand_written_doc: false
+- id: nepse-theme-detector
+  display_name: NEPSE Theme Detector
+  category: strategy-research
+  status: beta
+  summary: Detect active NEPSE themes (monsoon hydropower, rate-cut financials, defensive insurance, microfinance speculation, BFI dividend cluster) by combining sector rotation, breadth, and macro signals.
+  timeframe: weekly
+  difficulty: intermediate
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads nepse-sector-analyst, nepse-market-breadth-analyzer, nepse-macro-regime-detector, nepse-uptrend-analyzer JSON
+  - id: user_themes_csv
+    type: local_file
+    requirement: optional
+    note: Optional user-supplied themes added to the built-in library
+  inputs:
+  - sectors_json
+  - breadth_json
+  - macro_json
+  - uptrend_json
+  outputs:
+  - theme_scores
+  - active_themes
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-stanley-druckenmiller-investment
+  display_name: NEPSE Stanley Druckenmiller Investment
+  category: strategy-research
+  status: beta
+  summary: Synthesize NEPSE macro (NRB, USD/NPR, Nifty), regime (uptrend, breadth), and top-risk signals into a Druckenmiller-style bias score and recommended portfolio tilt.
+  timeframe: weekly
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads JSON from nepse-macro-regime-detector, nepse-uptrend-analyzer, nepse-market-breadth-analyzer, nepse-sector-analyst, nepse-market-top-detector, nepse-ibd-distribution-day-monitor
+  inputs:
+  - macro_json
+  - uptrend_json
+  - breadth_json
+  - sectors_json
+  - top_json
+  - distrib_json
+  outputs:
+  - druckenmiller_bias
+  - recommended_tilt
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-edge-candidate-agent
+  display_name: NEPSE Edge Candidate Agent
+  category: strategy-research
+  status: beta
+  summary: Detect NEPSE-specific anomalies (circuit-day continuation, monsoon hydropower clusters, microfinance turnarounds, BFI dividend pullbacks) and emit edge tickets for downstream strategy design.
+  timeframe: daily
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: nepse_client
+    type: market_data
+    requirement: required
+    note: Full-universe OHLCV via common.nepse.NepseClient
+  inputs:
+  - nepse_universe_ohlcv
+  outputs:
+  - edge_tickets
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-edge-signal-aggregator
+  display_name: NEPSE Edge Signal Aggregator
+  category: strategy-research
+  status: beta
+  summary: Aggregate edge tickets from nepse-edge-candidate-agent, deduplicate same-symbol observations, and rank by confluence + recency + detector confidence + sector boost.
+  timeframe: daily
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads YAML tickets from nepse-edge-candidate-agent
+  inputs:
+  - edge_tickets_dir
+  - sectors_json
+  outputs:
+  - edge_signals
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false
+- id: nepse-edge-strategy-designer
+  display_name: NEPSE Edge Strategy Designer
+  category: strategy-research
+  status: beta
+  summary: Convert NEPSE edge signals into backtest-ready strategy YAML drafts with NEPSE-specific defaults (15% band, long-only, T+2 settlement, AMO eligible, whole-share floor rounding).
+  timeframe: weekly
+  difficulty: advanced
+  markets:
+  - NEPSE
+  integrations:
+  - id: upstream_skill_outputs
+    type: local_file
+    requirement: required
+    note: Reads nepse-edge-signal-aggregator JSON
+  inputs:
+  - signals_json
+  outputs:
+  - strategy_drafts
+  workflows:
+  - nepse-market-regime-daily
+  hand_written_doc: false

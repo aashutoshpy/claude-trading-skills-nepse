@@ -33,10 +33,13 @@ def find_skills_without_docs() -> list[str]:
         en_doc = docs_en_dir / f"{skill_name}.md"
         ja_doc = docs_ja_dir / f"{skill_name}.md"
 
+        # NEPSE skills are English-only by design; do not require a JA page.
+        require_ja = not skill_name.startswith("nepse-")
+
         missing = []
         if not en_doc.exists():
             missing.append(f"docs/en/skills/{skill_name}.md")
-        if not ja_doc.exists():
+        if require_ja and not ja_doc.exists():
             missing.append(f"docs/ja/skills/{skill_name}.md")
 
         if missing:

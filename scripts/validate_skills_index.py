@@ -68,6 +68,10 @@ VALID_REQUIREMENTS = frozenset(
 VALID_TIMEFRAMES = frozenset({"daily", "weekly", "event-driven", "research", "unknown"})
 VALID_DIFFICULTIES = frozenset({"beginner", "intermediate", "advanced", "unknown"})
 
+# `markets:` is an optional list flagging which market(s) a skill applies to.
+# Absent means market-agnostic (default = US for legacy entries).
+VALID_MARKETS = frozenset({"US", "NEPSE"})
+
 # ---------------------------------------------------------------------------
 # Frontmatter parser (mirrors scripts/hooks/check_skill_frontmatter.py)
 # ---------------------------------------------------------------------------
@@ -257,6 +261,35 @@ def _validate_index_structure(
                         "integration uses `unknown` marker — flagged for owner review",
                     )
                 )
+
+        # markets: optional list[str]; values must be in VALID_MARKETS.
+        markets = entry.get("markets")
+        if markets is not None:
+            if not isinstance(markets, list) or not all(isinstance(m, str) for m in markets):
+                findings.append(
+                    Finding("IDX013", "error", loc, "markets must be a list of strings")
+                )
+            else:
+                bad = sorted({m for m in markets if m not in VALID_MARKETS})
+                if bad:
+                    findings.append(
+                        Finding(
+                            "IDX013",
+                            "error",
+                            loc,
+                            f"invalid market(s) {bad!r}; valid: {sorted(VALID_MARKETS)}",
+                        )
+                    )
+                # NEPSE skills must declare it (and only it) — naming convention check
+                if entry.get("id", "").startswith("nepse-") and markets != ["NEPSE"]:
+                    findings.append(
+                        Finding(
+                            "IDX013",
+                            "error",
+                            loc,
+                            "nepse-* skills must declare `markets: [NEPSE]`",
+                        )
+                    )
 
         # Best-effort fields (warn vs error)
         timeframe = entry.get("timeframe", "unknown")

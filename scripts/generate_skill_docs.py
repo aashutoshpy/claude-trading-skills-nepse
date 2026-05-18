@@ -30,6 +30,12 @@ DEFAULT_CLAUDE_MD = PROJECT_ROOT / "CLAUDE.md"
 
 GITHUB_REPO_URL = "https://github.com/tradermonty/claude-trading-skills"
 
+
+def _is_nepse_skill(name: str) -> bool:
+    """NEPSE skills are English-only — JA pages are never generated or required."""
+    return name.startswith("nepse-")
+
+
 # Existing hand-written guides; skip by default (--overwrite to regenerate).
 HAND_WRITTEN = frozenset(
     {
@@ -985,6 +991,9 @@ def update_index_pages(
 
         rows = []
         for name, skill_data, api_info in all_skills:
+            # NEPSE skills are English-only — keep them out of the JA index.
+            if lang == "ja" and _is_nepse_skill(name):
+                continue
             row = generate_index_table_row(
                 name,
                 skill_data["frontmatter"].get("description", ""),
@@ -1331,14 +1340,17 @@ def _check_drift(
         en_path = en_dir / f"{name}.md"
         ja_path = ja_dir / f"{name}.md"
 
+        # NEPSE skills are English-only: skip every JA path below.
+        paths_to_check = (en_path,) if _is_nepse_skill(name) else (en_path, ja_path)
+
         # 1. Existence: every skill must have EN + JA pages.
-        for p in (en_path, ja_path):
+        for p in paths_to_check:
             if not p.is_file():
                 print(f"DRIFT: {p} does not exist", file=sys.stderr)
                 drift = True
 
         # 2. Marker validity: present-but-invalid generated: value.
-        for p in (en_path, ja_path):
+        for p in paths_to_check:
             if p.is_file() and _marker_present_but_invalid(p):
                 print(
                     f"DRIFT: {p} has invalid 'generated:' marker (must be true or false)",
@@ -1353,7 +1365,10 @@ def _check_drift(
             name not in HAND_WRITTEN and en_path.is_file() and _doc_is_generated(en_path) is True
         )
         ja_owned = (
-            name not in HAND_WRITTEN and ja_path.is_file() and _doc_is_generated(ja_path) is True
+            not _is_nepse_skill(name)
+            and name not in HAND_WRITTEN
+            and ja_path.is_file()
+            and _doc_is_generated(ja_path) is True
         )
         if not (en_owned or ja_owned):
             continue
@@ -1462,7 +1477,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # Per-page ownership guard (EN and JA decided independently).
         write_en = _may_write(en_path, name, args)
-        write_ja = _may_write(ja_path, name, args)
+        write_ja = _may_write(ja_path, name, args) and not _is_nepse_skill(name)
         if not write_en and not write_ja:
             skipped += 1
             continue
@@ -1481,7 +1496,7 @@ def main(argv: list[str] | None = None) -> int:
         if write_ja:
             ja_path.write_text(ja_content, encoding="utf-8")
             generated_ja += 1
-        elif args.overwrite:
+        elif args.overwrite and not _is_nepse_skill(name):
             print(f"  Protected, JA skipped: {name} (use --force)", file=sys.stderr)
 
         wrote = []

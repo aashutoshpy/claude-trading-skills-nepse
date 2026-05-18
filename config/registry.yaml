@@ -1,0 +1,75 @@
+# NEPSE universe + sector taxonomy + margin eligibility
+#
+# Loaded by common.nepse.registry. This file should be regenerated
+# from a live `NepseClient.list_constituents()` call periodically;
+# the seed values below are documented placeholders so the foundation
+# is usable before any live data has been fetched.
+#
+# Last verified: 2026-05-17 (~284 listed; sector counts from Feb 2026)
+
+# Sector identifiers used across NEPSE skills. Keep these stable —
+# Python code references them as string literals. Display names can
+# be looked up via `Sector.display_name`.
+sectors:
+  - id: BANKING
+    display_name: Commercial Banks
+    approximate_count: 18
+  - id: DEVELOPMENT_BANK
+    display_name: Development Banks
+  - id: FINANCE
+    display_name: Finance Companies
+  - id: MICROFINANCE
+    display_name: Microfinance
+  - id: HYDROPOWER
+    display_name: Hydropower
+    approximate_count: 97            # largest single sector by company count
+  - id: LIFE_INSURANCE
+    display_name: Life Insurance
+  - id: NON_LIFE_INSURANCE
+    display_name: Non-Life Insurance
+  - id: HOTELS
+    display_name: Hotels & Tourism
+    approximate_count: 8
+  - id: MANUFACTURING
+    display_name: Manufacturing & Processing
+    approximate_count: 26
+  - id: TRADING
+    display_name: Trading
+    approximate_count: 4
+  - id: MUTUAL_FUNDS
+    display_name: Mutual Funds
+  - id: INVESTMENT
+    display_name: Investment
+    approximate_count: 7
+  - id: OTHERS
+    display_name: Others
+    approximate_count: 10
+
+# Total listed companies (informational; live count comes from the client)
+listed_company_count_seed: 284
+listed_company_count_seed_date: "2026-02-15"
+
+# Constituents — empty by design. The seed list should be regenerated
+# via: python3 scripts/refresh_nepse_registry.py (to be built).
+# Until then, `NepseClient.list_constituents()` is the source of truth.
+constituents: []
+
+# Margin-eligible names — 123 companies as of April 2026 go-live.
+# Source: SEBON / NEPSE margin-eligibility notice.
+# Empty seed; refresh via the same refresh script.
+margin_eligible_symbols: []
+
+# Bikram Sambat → Gregorian quarter-end mapping for FY 2082/83.
+# Listed companies must file quarterly unaudited statements within
+# the statutory 30-day window after each quarter-end.
+nepali_fiscal_year:
+  fy_label: "2082/83"
+  quarters:
+    - q: 1
+      ends_gregorian: "2025-10-17"   # ~end of Ashwin
+    - q: 2
+      ends_gregorian: "2026-01-14"   # ~end of Poush
+    - q: 3
+      ends_gregorian: "2026-04-13"   # ~end of Chaitra
+    - q: 4
+      ends_gregorian: "2026-07-16"   # ~end of Ashadh

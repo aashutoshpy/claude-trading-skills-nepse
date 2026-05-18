@@ -1,0 +1,95 @@
+schema_version: 1
+id: nepse-core-portfolio-weekly
+display_name: NEPSE Core Portfolio Weekly
+cadence: weekly
+estimated_minutes: 60
+target_users:
+  - growth-investor
+  - part-time-swing-trader
+difficulty: intermediate
+api_profile: no-api-basic
+markets:
+  - NEPSE
+
+when_to_run: >-
+  Once per week (typically weekend or Sunday evening NPT) to review NEPSE
+  core holdings, sector concentration, margin exposure, and rebalancing
+  opportunities. Combine with macro-regime context for sizing decisions.
+when_not_to_run: >-
+  Not during NEPSE session hours — wait for end-of-day close so price reads
+  match settlement-eligible holdings.
+
+required_skills:
+  - nepse-portfolio-tracker
+  - exposure-coach
+optional_skills:
+  - nepse-margin-eligibility
+  - nepse-value-dividend-screener
+  - nepse-kanchi-dividend-sop
+  - nepse-sector-analyst
+  - nepse-macro-regime-detector
+  - trader-memory-core
+
+artifacts:
+  - id: nepse_portfolio_snapshot
+    produced_by_step: 1
+    required: true
+    downstream_hints:
+      - nepse-trade-memory-loop
+  - id: nepse_dividend_candidates
+    produced_by_step: 2
+    required: false
+  - id: nepse_kanchi_quality_scores
+    produced_by_step: 3
+    required: false
+  - id: nepse_rebalance_decision
+    produced_by_step: 4
+    required: true
+
+steps:
+  - step: 1
+    name: Track portfolio + sector concentration
+    skill: nepse-portfolio-tracker
+    produces:
+      - nepse_portfolio_snapshot
+    decision_gate: false
+
+  - step: 2
+    name: Screen for new dividend opportunities
+    skill: nepse-value-dividend-screener
+    optional: true
+    produces:
+      - nepse_dividend_candidates
+    decision_gate: false
+
+  - step: 3
+    name: Apply Kanchi quality checks to dividend candidates
+    skill: nepse-kanchi-dividend-sop
+    optional: true
+    consumes:
+      - nepse_dividend_candidates
+    produces:
+      - nepse_kanchi_quality_scores
+    decision_gate: false
+
+  - step: 4
+    name: Decide on rebalancing actions
+    skill: exposure-coach
+    consumes:
+      - nepse_portfolio_snapshot
+      - nepse_kanchi_quality_scores
+    produces:
+      - nepse_rebalance_decision
+    decision_gate: true
+    decision_question: >-
+      Given current sector concentration, margin warnings, dividend
+      opportunities, and macro regime, what rebalancing actions (if any)
+      are warranted this week?
+
+manual_review:
+  - Confirm any margin-call distance < 10% triggers immediate action.
+  - Confirm any sector concentration > 40% is intentional.
+  - Verify Kanchi PASS candidates against quarterly results timing before sizing.
+  - Log rebalancing decisions to trader-memory-core.
+
+journal_destination: trader-memory-core

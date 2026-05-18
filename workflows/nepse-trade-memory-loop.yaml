@@ -1,0 +1,75 @@
+schema_version: 1
+id: nepse-trade-memory-loop
+display_name: NEPSE Trade Memory Loop
+cadence: per-trade
+estimated_minutes: 15
+target_users:
+  - part-time-swing-trader
+  - growth-investor
+difficulty: beginner
+api_profile: no-api-basic
+markets:
+  - NEPSE
+
+when_to_run: >-
+  Whenever a NEPSE trade is opened, partially closed, or fully closed.
+  Captures the thesis, links the screener / chart / plan reports, and
+  produces a postmortem on close.
+when_not_to_run: >-
+  Not for tax estimation alone — use nepse-capital-gains-tax-notes
+  directly for one-off tax math without thesis tracking.
+
+required_skills:
+  - trader-memory-core
+optional_skills:
+  - signal-postmortem
+  - nepse-capital-gains-tax-notes
+
+artifacts:
+  - id: nepse_thesis_record
+    produced_by_step: 1
+    required: true
+  - id: nepse_postmortem
+    produced_by_step: 2
+    required: false
+  - id: nepse_tax_estimate
+    produced_by_step: 3
+    required: false
+
+steps:
+  - step: 1
+    name: Register / update thesis
+    skill: trader-memory-core
+    produces:
+      - nepse_thesis_record
+    decision_gate: true
+    decision_question: >-
+      Is the thesis being opened, transitioned (ENTRY_READY → ACTIVE), trimmed,
+      or fully closed? Update state accordingly via thesis_store.py.
+
+  - step: 2
+    name: Postmortem on close
+    skill: signal-postmortem
+    optional: true
+    consumes:
+      - nepse_thesis_record
+    produces:
+      - nepse_postmortem
+    decision_gate: false
+
+  - step: 3
+    name: Estimate capital gains tax
+    skill: nepse-capital-gains-tax-notes
+    optional: true
+    consumes:
+      - nepse_thesis_record
+    produces:
+      - nepse_tax_estimate
+    decision_gate: false
+
+manual_review:
+  - Confirm cost basis (avg cost across lots, bonus-adjusted) is correctly recorded.
+  - For closes, verify holding period matches the long-term (>365d) threshold if relevant.
+  - For partial closes (trims), record cumulative realized P&L on the thesis.
+
+journal_destination: trader-memory-core

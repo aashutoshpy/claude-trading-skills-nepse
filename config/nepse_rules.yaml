@@ -1,0 +1,74 @@
+# NEPSE market rules — single source of truth
+#
+# Every NEPSE skill reads its rule values from this file (via
+# common.nepse.trading_calendar / common.nepse.formats). When NEPSE
+# changes a rule, edit this file — do NOT change Python constants.
+#
+# Whenever you edit this file, append a one-line entry to
+# common/nepse/references/nepse_market_rules_changelog.md so the
+# rule-change history is auditable.
+#
+# Last verified: 2026-05-17
+
+market: NEPSE
+timezone: Asia/Kathmandu          # UTC+5:45
+
+# Trading week — Mon-Fri since government adopted Sat+Sun weekend
+# in late 2025 (changed from Sun-Thu). isoweekday: Mon=1 ... Sun=7
+trading_days_isoweekday: [1, 2, 3, 4, 5]
+
+# Continuous-matching session. NEPSE board has approved extending
+# opening to 10:00 but it is not live as of May 2026.
+session:
+  open: "11:00"
+  close: "15:00"
+
+# Pre-opening / opening auction
+pre_opening:
+  open: "10:30"
+  close: "10:55"
+  price_band_pct: 3.0             # raised from 2.0 in Apr 2026
+
+# After-Market Order (AMO) window for next-session queuing
+# Permitted April 2026; rolling out.
+amo:
+  open: "18:00"
+  close: "06:00"                  # next day
+
+# Daily price-fluctuation limit (raised from 10.0 on 2026-04-17)
+daily_price_band_pct: 15.0
+
+# Two-tier circuit breaker (simplified from prior 4/5/6% three-tier)
+circuit_breakers:
+  - session_window: ["11:00", "13:00"]
+    index_move_pct: 5.0
+    action: halt_15min
+  - session_window: ["13:00", "15:00"]
+    index_move_pct: 8.0
+    action: close_for_day
+
+# Settlement: T+2 (no T+1 transition announced)
+settlement_t_plus: 2
+
+# Short selling: not available (SEBON has discussed, no 2026 enablement)
+short_selling_enabled: false
+
+# Margin trading — live since mid-April 2026 (Baisakh 2, 2082).
+# Eligible-name list lives in config/registry.yaml under
+# `margin_eligible_symbols` because it changes more often than rules.
+margin:
+  enabled: true
+  initial_margin_pct: 30.0
+  maintenance_margin_pct: 20.0
+  framework_effective: "2026-02-13"
+  go_live: "2026-04-15"
+
+# Capital gains tax — government has proposed a uniform 10%; not enacted.
+# `proposed_uniform_pct` is informational; skills should warn if `current`
+# disagrees with what the user reports actually withheld.
+capital_gains_tax:
+  long_term_pct: 5.0              # holding > 365 days
+  short_term_pct: 7.5             # holding <= 365 days
+  long_term_threshold_days: 365
+  proposed_uniform_pct: 10.0
+  proposed_uniform_status: not_enacted

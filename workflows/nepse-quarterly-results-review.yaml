@@ -1,0 +1,90 @@
+schema_version: 1
+id: nepse-quarterly-results-review
+display_name: NEPSE Quarterly Results Review
+cadence: quarterly
+estimated_minutes: 90
+target_users:
+  - growth-investor
+  - part-time-swing-trader
+difficulty: intermediate
+api_profile: no-api-basic
+markets:
+  - NEPSE
+
+when_to_run: >-
+  At each Nepali fiscal-year quarter-end (Ashwin / Poush / Chaitra / Ashadh),
+  ~2-3 weeks after the statutory T+30 filing deadline so most companies have
+  released unaudited statements. Review historical theses, score post-result
+  reactions, and produce a quarter-cadence performance read.
+when_not_to_run: >-
+  Off-quarter, except for ad-hoc reviews after major events.
+
+required_skills:
+  - nepse-earnings-calendar
+  - nepse-earnings-trade-analyzer
+  - trader-memory-core
+optional_skills:
+  - signal-postmortem
+  - nepse-downtrend-duration-analyzer
+  - nepse-portfolio-tracker
+
+artifacts:
+  - id: nepse_earnings_calendar
+    produced_by_step: 1
+    required: true
+  - id: nepse_earnings_scores
+    produced_by_step: 2
+    required: true
+  - id: nepse_quarterly_postmortems
+    produced_by_step: 3
+    required: true
+  - id: nepse_quarter_review_summary
+    produced_by_step: 4
+    required: true
+
+steps:
+  - step: 1
+    name: Build the quarter's filing calendar
+    skill: nepse-earnings-calendar
+    produces:
+      - nepse_earnings_calendar
+    decision_gate: false
+
+  - step: 2
+    name: Score post-result reactions for held names
+    skill: nepse-earnings-trade-analyzer
+    consumes:
+      - nepse_earnings_calendar
+    produces:
+      - nepse_earnings_scores
+    decision_gate: false
+
+  - step: 3
+    name: Postmortem closed theses from the quarter
+    skill: signal-postmortem
+    optional: true
+    consumes:
+      - nepse_earnings_scores
+    produces:
+      - nepse_quarterly_postmortems
+    decision_gate: false
+
+  - step: 4
+    name: Synthesize quarter review + next-quarter plan
+    skill: trader-memory-core
+    consumes:
+      - nepse_earnings_scores
+      - nepse_quarterly_postmortems
+    produces:
+      - nepse_quarter_review_summary
+    decision_gate: true
+    decision_question: >-
+      What worked / didn't / surprised this quarter? Which theses to carry,
+      trim, or close? What setup-type bias is justified next quarter?
+
+manual_review:
+  - Identify the 3 best and 3 worst trades; note common factors.
+  - Compare quarter performance to NEPSE composite and to your preferred sector.
+  - Record skill-level feedback (which screener / detector worked / didn't).
+
+journal_destination: trader-memory-core

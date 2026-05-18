@@ -76,6 +76,20 @@ if [ -d "$REPO_TEST_DIR" ] && ls "$REPO_TEST_DIR"/test_*.py >/dev/null 2>&1; the
     echo ""
 fi
 
+# --- NEPSE foundation tests: common/nepse/tests/ ---
+NEPSE_TEST_DIR="$REPO_ROOT/common/nepse/tests"
+if [ -d "$NEPSE_TEST_DIR" ] && ls "$NEPSE_TEST_DIR"/test_*.py >/dev/null 2>&1; then
+    TOTAL=$((TOTAL + 1))
+    echo "--- common/nepse/tests ---"
+    if uv run --extra dev pytest "$NEPSE_TEST_DIR" --tb=short -q 2>&1; then
+        :
+    else
+        FAILED=$((FAILED + 1))
+        FAILED_SKILLS+=("common/nepse")
+    fi
+    echo ""
+fi
+
 echo "=== Summary: $((TOTAL - FAILED))/$TOTAL passed, $SKIPPED skipped ==="
 if [ ${#KNOWN_SKIP[@]} -gt 0 ]; then
     echo "Skipped (known failures): ${KNOWN_SKIP[*]}"
