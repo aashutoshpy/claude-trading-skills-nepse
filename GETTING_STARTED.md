@@ -25,7 +25,8 @@ A hands-on, no-jargon walkthrough for amateur NEPSE traders. You'll go from a fr
 - [6. Glossary](#6-glossary)
 - [7. Common issues](#7-common-issues)
 - [8. Where to go next](#8-where-to-go-next)
-- [9. Disclaimer](#9-disclaimer)
+- [9. Automating with Claude Desktop Routines](#9-automating-with-claude-desktop-routines)
+- [10. Disclaimer](#10-disclaimer)
 
 ---
 
@@ -727,7 +728,24 @@ Less-used but useful when relevant:
 
 ---
 
-## 9. Disclaimer
+## 9. Automating with Claude Desktop Routines
+
+Once you're comfortable running the morning routine by hand for a week or two, automate it. Claude Desktop's **Routines** feature (launched April 2026, available on Pro/Max/Team/Enterprise plans) fires a chat session on a schedule that runs the wrapper scripts + produces an interpreted action plan — same shape as the walkthroughs in §2.
+
+| Routine | Cadence | Output | Daily-budget cost |
+|---|---|---|---|
+| [Daily morning briefing](docs/routines/daily-morning-briefing.md) | Mon–Fri 09:00 NPT | `reports/morning_briefing_YYYY-MM-DD.md` | 1/day |
+| [Weekly portfolio review](docs/routines/weekly-portfolio-review.md) | Sat 10:00 NPT | `reports/weekly_review_YYYY-MM-DD.md` | 1/week |
+| [Quarterly results review](docs/routines/quarterly-results-review.md) | 4×/year (~Dec/Mar/May/Aug) | `reports/quarterly_review_YYYY-MM-DD.md` | 1/quarter |
+| [Per-trade postmortem](docs/routines/per-trade-postmortem.md) | On-demand (saved prompt) | `state/journal/pm_<thesis_id>.md` | 1 per closed trade |
+
+**Install in one routine:** Claude Desktop → sidebar → Routines → New routine → Local → paste prompt from the relevant doc → set schedule → save. Full walkthrough: [docs/routines/README.md](docs/routines/README.md).
+
+**Why this matters:** the daily briefing is the difference between "I run a checklist each morning" (you might skip days, miss signals) and "Claude runs the checklist and writes a one-paragraph action plan I read with coffee" (consistent, calibrated, no skipped days). Same logic as the §2 walkthrough — just automated.
+
+---
+
+## 10. Disclaimer
 
 This repository is for **educational and research purposes only**. It is not financial advice, investment advisory service, tax advice, legal advice, a signal service, or a broker execution platform. Trading and investing involve risk, including loss of principal. Past performance, backtests, screens, reports, and AI-generated analysis do not guarantee future results. All trading decisions, position sizing, tax/regulatory compliance, and broker usage are the user's responsibility.
 

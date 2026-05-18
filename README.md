@@ -81,6 +81,8 @@ Copy the relevant `skills/nepse-*/` folder into your Claude Code Skills director
 
 See [`workflows/README.md`](workflows/README.md) for the manifest schema and how to run them.
 
+**Automation:** all five workflows are wired up as **Claude Desktop Routines** (April 2026 feature). One scheduled routine fires each morning to run the regime + screener + interpretation. See [`docs/routines/`](docs/routines/) for paste-into-Routines prompts + install guide.
+
 ---
 
 ## Skill Catalog
