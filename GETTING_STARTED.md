@@ -164,7 +164,27 @@ The 13 sector IDs are: `BANKING`, `DEVELOPMENT_BANK`, `FINANCE`, `MICROFINANCE`,
 
 ### 1.6 Build up your OHLCV history
 
-The VCP screener needs **~200 trading days** of OHLCV per name to detect a base. You have three paths to get there:
+The VCP screener needs **~200 trading days** of OHLCV per name to detect a base. You have four paths to get there:
+
+#### Path D — One-shot bootstrap from a public GitHub archive (recommended)
+
+```bash
+python3 scripts/bootstrap_ohlcv_from_github.py
+```
+
+Downloads `Aabishkar2/nepse-data` (MIT-licensed, auto-refreshed 5×/day via GitHub Actions) in a single 5MB tarball, transforms each per-company CSV into our schema, and writes `data/ohlcv/<SYMBOL>.csv` for ~125 NEPSE companies. Each file holds **3,000–3,500 daily bars going back to 2010-2011**. Total time: ~5 seconds. After this you can run the VCP screener immediately and get real candidates.
+
+Flags:
+
+| Flag | Purpose |
+|---|---|
+| `--symbols NABIL UPPER NICA` | Only import these tickers |
+| `--max-symbols 30` | Cap for testing |
+| `--data-dir custom/path` | Override data root |
+| `--dry-run` | Parse + report; no writes |
+| `--source-repo owner/repo` | Override the source GitHub repo |
+
+**Data attribution:** [Aabishkar2/nepse-data](https://github.com/Aabishkar2/nepse-data), MIT-licensed. NEPSE OHLCV scraped from sharesansar.com. After bootstrap, run Path A daily to stay fresh.
 
 #### Path A — Daily forward accumulation (set-and-forget)
 
