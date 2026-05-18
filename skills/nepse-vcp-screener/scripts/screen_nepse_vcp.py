@@ -41,10 +41,25 @@ def screen(
     occasionally flaky) — failures are logged to stderr but don't
     abort the run.
     """
-    constituents = client.list_constituents()
+    constituents: list[Security] = []
     if symbols:
         symbol_set = {s.upper() for s in symbols}
-        constituents = [c for c in constituents if c.symbol in symbol_set]
+        try:
+            all_constituents = client.list_constituents()
+            constituents = [c for c in all_constituents if c.symbol in symbol_set]
+        except Exception as exc:
+            print(
+                f"WARN: list_constituents() unavailable ({exc}); "
+                "falling back to --symbols-only mode (sector will be 'OTHERS')",
+                file=sys.stderr,
+            )
+        if not constituents:
+            constituents = [
+                Security(symbol=s, name=s, sector_id="OTHERS")
+                for s in sorted(symbol_set)
+            ]
+    else:
+        constituents = client.list_constituents()
 
     if not constituents:
         print("ERROR: no NEPSE constituents to screen", file=sys.stderr)
