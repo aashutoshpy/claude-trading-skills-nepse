@@ -98,9 +98,16 @@ class NepseBackend(Protocol):
 
 
 class NepseClient:
-    """Backend-agnostic facade. Pick a backend via `create()`."""
+    """Backend-agnostic facade. Pick a backend via `create()`.
 
-    DEFAULT_BACKEND = "nepalstock"
+    Default is `csv` (offline). The live-fetch backends (`nepalstock`,
+    `community`) are both broken against the live NEPSE infrastructure as
+    of 2026-05-18 — see README "Limitations". Override the default with
+    `NEPSE_BACKEND=...` env var or `--backend` flag if your environment
+    differs.
+    """
+
+    DEFAULT_BACKEND = "csv"
 
     def __init__(self, backend: NepseBackend):
         self._backend = backend

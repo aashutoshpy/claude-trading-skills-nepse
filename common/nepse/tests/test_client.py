@@ -6,10 +6,11 @@ import pytest
 from common.nepse.client import NepseClient, NepseConfigError
 
 
-def test_create_default_picks_nepalstock_backend(monkeypatch):
+def test_create_default_picks_csv_backend(monkeypatch):
+    """Default is `csv` since live-fetch backends are dead — see README Limitations."""
     monkeypatch.delenv("NEPSE_BACKEND", raising=False)
     client = NepseClient.create()
-    assert client.backend_name == "nepalstock"
+    assert client.backend_name == "csv"
 
 
 def test_create_via_env_var(monkeypatch):
