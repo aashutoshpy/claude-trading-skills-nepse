@@ -47,3 +47,8 @@ data/ohlcv/
 data/indexes/
 data/floorsheet/
 data/constituents.csv
+
+# Personal portfolio + cost basis — never commit. Templates are .example files.
+data/meroshare_export.csv
+data/nepse_portfolio.csv
+data/cost_basis.csv

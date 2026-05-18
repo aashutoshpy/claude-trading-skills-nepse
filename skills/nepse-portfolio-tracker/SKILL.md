@@ -33,9 +33,20 @@ NICA,50,725.00,2026-01-10,false
 
 ## Workflow
 
-### Step 1: Export from MeroShare
+### Step 1: Export from MeroShare and normalize
 
-Log into meroshare.cdsc.com.np → My Portfolio → Export. Save as `data/nepse_portfolio.csv`. (Or maintain manually.)
+MeroShare's exported CSV uses verbose column names and **omits cost basis** (it doesn't know what you paid). Two-step process:
+
+1. Log into meroshare.cdsc.com.np → My Portfolio → Export. Save as `data/meroshare_export.csv` (NOT `data/nepse_portfolio.csv` — that's the normalizer's output).
+2. Copy `data/cost_basis.csv.example` to `data/cost_basis.csv` and add one row per holding with your `avg_cost`, `entry_date`, and `is_margin`.
+3. Run the normalizer to join them into the tracker schema:
+
+```bash
+python3 scripts/normalize_meroshare_csv.py
+# Output: data/nepse_portfolio.csv with symbol, shares, avg_cost, entry_date, is_margin
+```
+
+Exit code 0 = ready; 3 = partial (some symbols missing cost basis — the affected rows skip P&L); 1 = MeroShare CSV unreadable.
 
 ### Step 2: Run
 

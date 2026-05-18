@@ -448,29 +448,43 @@ Once a week — Saturday or Sunday — review your full portfolio. Maps to [`nep
 1. Log into [meroshare.cdsc.com.np](https://meroshare.cdsc.com.np).
 2. Click **My Portfolio**.
 3. Click **Export** (button at top right).
+4. Save the downloaded CSV as `data/meroshare_export.csv`.
 
-MeroShare downloads a CSV. Open it in Excel/Google Sheets. **The columns won't match what this repo expects** — MeroShare's export uses Nepali-format headers and includes columns you don't need.
+MeroShare's export uses verbose column names (`Scrip`, `Current Balance`, `Last Transaction Price (LTP)` etc.) and **doesn't include cost basis** — MeroShare doesn't know what you paid. You provide that yourself in a side file the normalizer joins with the export.
 
-Rename / reshape the file so it has **exactly these columns** (the script will refuse rows that don't match):
+**Step 1 — Create your cost-basis side file.** Copy the template and edit:
 
-| Column | Type | Required | Notes |
-|---|---|---|---|
-| `symbol` | string (uppercase) | yes | e.g., `NABIL` |
-| `shares` | number | yes | Fractional OK |
-| `avg_cost` | number | yes | Your weighted average cost in NPR |
-| `entry_date` | YYYY-MM-DD | optional | When you opened the position. Used for capital-gains-tax classification. |
-| `is_margin` | true/false | optional | Whether the position is held on margin. Defaults to `false`. |
-
-Example CSV:
-
-```csv
-symbol,shares,avg_cost,entry_date,is_margin
-NABIL,100,1180.00,2025-12-15,false
-UPPER,200,425.00,2026-03-22,true
-NICA,50,890.00,2026-04-10,false
+```bash
+cp data/cost_basis.csv.example data/cost_basis.csv
 ```
 
-Save the file as `data/nepse_portfolio.csv` (create the `data/` folder if needed: `mkdir -p data`).
+Open `data/cost_basis.csv` in any editor and add one row per holding. Find the cost basis from:
+
+- **IPO / bonus allotments:** par value (typically NPR 100)
+- **Market buys:** your broker's TMS → Transaction History
+- **Inherited / gifted:** book value at transfer date
+
+Schema:
+
+```csv
+symbol,avg_cost,entry_date,is_margin
+NABIL,1180.00,2025-12-15,false
+UPPER,425.00,2026-03-22,true
+```
+
+**Step 2 — Run the normalizer.** Joins the MeroShare export with your cost basis and writes `data/nepse_portfolio.csv` in the tracker schema:
+
+```bash
+python3 scripts/normalize_meroshare_csv.py
+```
+
+Output: `N positions normalized, K with cost basis, M missing — please add: ...`. Exit code:
+
+- `0` — all positions have cost basis; ready for the tracker
+- `3` — partial; the file is written but rows missing cost basis won't get P&L
+- `1` — MeroShare CSV unreadable; fix the export
+
+The weekly review wrapper (`scripts/run_weekly_portfolio_review.sh`) calls the normalizer automatically — you only need to run it manually if you want to verify before the next routine fire.
 
 ### 3.2 Run the portfolio tracker
 

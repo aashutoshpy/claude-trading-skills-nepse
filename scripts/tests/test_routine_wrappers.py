@@ -155,6 +155,40 @@ def test_weekly_review_runs_tracker_when_csv_present(fake_python3, tmp_path):
     assert "fetch_nepse_snapshot.py" in log
 
 
+def test_weekly_review_runs_normalizer_when_meroshare_present(fake_python3, tmp_path):
+    """When data/meroshare_export.csv exists, the wrapper runs the normalizer
+    BEFORE the tracker — the new 0/3 step that fixes the schema-mismatch gap."""
+    # Pre-create the work dir + drop a meroshare export + portfolio CSV stubs
+    work = tmp_path / "work"
+    # _run_wrapper helper already creates work/ and scripts/. We need to set
+    # up the meroshare_export.csv before the helper runs.
+    # Simpler approach: copy the wrapper into a pre-built work dir.
+    work.mkdir()
+    (work / "data").mkdir()
+    (work / "reports").mkdir()
+    scripts_dir = work / "scripts"
+    scripts_dir.mkdir()
+    shutil.copy2(SCRIPTS / "run_weekly_portfolio_review.sh",
+                 scripts_dir / "run_weekly_portfolio_review.sh")
+    (scripts_dir / "run_weekly_portfolio_review.sh").chmod(0o755)
+    # The MeroShare export — content doesn't matter to the shim'd python3
+    (work / "data" / "meroshare_export.csv").write_text("Scrip\nNABIL\n")
+    # Pre-create the tracker-schema portfolio CSV so the "csv not found" guard
+    # passes after the normalize step (since our shim'd python3 doesn't
+    # actually write the output).
+    (work / "data" / "nepse_portfolio.csv").write_text("symbol,shares,avg_cost\n")
+
+    result = subprocess.run(
+        ["bash", str(scripts_dir / "run_weekly_portfolio_review.sh")],
+        capture_output=True, text=True, cwd=str(work),
+    )
+    log = fake_python3.read_text()
+    assert "normalize_meroshare_csv.py" in log
+    # Normalizer must be called before the tracker
+    assert log.index("normalize_meroshare_csv.py") < log.index("track_portfolio.py")
+    assert result.returncode == 0, result.stderr
+
+
 # ---- quarterly_review ------------------------------------------------------
 
 

@@ -13,10 +13,11 @@ End-of-week NEPSE portfolio review: P&L, sector concentration, margin warnings, 
 
 ## Prerequisites
 
-- `data/nepse_portfolio.csv` exists with the canonical schema (export from MeroShare → My Portfolio; see [skills/nepse-portfolio-tracker/SKILL.md](../../skills/nepse-portfolio-tracker/SKILL.md))
+- `data/meroshare_export.csv` exists (raw MeroShare export — see [GETTING_STARTED.md §3.1](../../GETTING_STARTED.md#31-export-your-portfolio-from-meroshare))
+- `data/cost_basis.csv` exists (one row per position; copy from `data/cost_basis.csv.example`)
 - OHLCV cache is fresh (`scripts/fetch_nepse_snapshot.py` ran during the week)
 
-If the portfolio CSV is missing, the wrapper bails with a clear error and the routine reports "no portfolio to review."
+The wrapper auto-runs `scripts/normalize_meroshare_csv.py` to join the two inputs and produce `data/nepse_portfolio.csv` in the tracker schema. If MeroShare CSV is missing the wrapper exits 2 with a clear message. If cost basis is partial (some symbols missing), the wrapper continues — the tracker just skips P&L for the affected rows.
 
 ## What it does
 

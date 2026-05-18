@@ -1,0 +1,18 @@
+# NEPSE cost-basis side file — one row per holding.
+#
+# MeroShare doesn't export cost basis; you maintain it here by hand.
+# scripts/normalize_meroshare_csv.py joins this file with the raw
+# MeroShare export to produce data/nepse_portfolio.csv in the tracker
+# schema (symbol, shares, avg_cost, entry_date, is_margin).
+#
+# Where to find cost basis:
+#   - IPO / bonus allotments: cost = par value (typically NPR 100)
+#   - Market buys: check your broker's TMS → Transaction History
+#   - Inherited / gifted shares: book value at transfer date
+#
+# Copy this file to data/cost_basis.csv and edit. Lines starting with #
+# are ignored. Add one row per NEPSE symbol you hold.
+symbol,avg_cost,entry_date,is_margin
+NABIL,1180.00,2025-12-15,false
+UPPER,425.00,2026-03-22,true
+NICA,890.00,2026-04-10,false
