@@ -5,6 +5,16 @@ description: Detects Follow-Through Day (FTD) signals for market bottom confirma
 
 # FTD Detector Skill
 
+> **NEPSE applicability:** US-market only. O'Neil's FTD framework
+> depends on dual-index gap-up volume confirmations on QQQ/SPY-style
+> liquid indices. NEPSE has only the composite + 13 sector indices,
+> with sparser volume and a different (15%) circuit regime that
+> mechanically shapes single-day rally magnitudes. Applying FTD
+> mechanically to NEPSE produces too many false signals. NEPSE
+> traders use `nepse-uptrend-analyzer` divergence + `nepse-ibd-distribution-day-monitor`
+> for similar regime-transition reads. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md`.
+
 ## Purpose
 
 Detect Follow-Through Day (FTD) signals that confirm a market bottom, using William O'Neil's proven methodology. Generates a quality score (0-100) with exposure guidance for re-entering the market after corrections.

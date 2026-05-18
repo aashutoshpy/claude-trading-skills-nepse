@@ -5,6 +5,15 @@ description: Evaluates market bubble risk through quantitative data-driven analy
 
 # US Market Bubble Detection Skill (Revised v2.1)
 
+> **NEPSE applicability:** US-market only. The required indicators
+> (put/call ratio, VIX, aggregate margin debt, IPO lockup data) are
+> not published or aggregated for NEPSE. As the April 2026 margin
+> framework matures and SEBON publishes margin-debt aggregates, a
+> NEPSE port may become possible — re-evaluate in 2027. For now use
+> `nepse-market-top-detector` (Phase 2) for top-risk signals built
+> from available data. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md`.
+
 ## Key Revisions in v2.1
 
 **Critical Changes from v2.0:**

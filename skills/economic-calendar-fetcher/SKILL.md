@@ -5,6 +5,15 @@ description: "Fetch upcoming economic events and data releases using FMP API. Re
 
 # Economic Calendar Fetcher
 
+> **NEPSE applicability:** US-market only. The skill depends on FMP's
+> economic-calendar feed, which does not cover Nepal. NRB monetary
+> policy meetings and other Nepal economic releases are not aggregated
+> in any machine-readable feed accessible from the NEPSE backends.
+> NEPSE traders should maintain a manual macro CSV consumed by
+> `nepse-macro-regime-detector` (Phase 2), and follow NRB and CBS
+> Nepal directly for releases. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md`.
+
 ## Overview
 
 Retrieve upcoming economic events and data releases from the Financial Modeling Prep (FMP) Economic Calendar API. This skill fetches scheduled economic indicators including central bank monetary policy decisions, employment reports, inflation data (CPI/PPI), GDP releases, retail sales, manufacturing data, and other market-moving events that impact financial markets.

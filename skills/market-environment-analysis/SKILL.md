@@ -5,6 +5,14 @@ description: Comprehensive market environment analysis and reporting tool. Analy
 
 # Market Environment Analysis
 
+> **NEPSE applicability:** US-market only. This skill's framework is
+> heavily Fed-centric and assumes global correlations (DXY, oil-vs-DXY,
+> EM bond spreads) that NEPSE is only loosely connected to. NEPSE
+> traders use `nepse-macro-regime-detector` (Phase 2) for a coarser,
+> Nepal-specific macro read (NRB repo, USD/NPR, Nifty correlation,
+> Brent as import cost, gold) that aligns with available data. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md`.
+
 Comprehensive analysis tool for understanding market conditions and creating professional market reports anytime.
 
 ## When to Use

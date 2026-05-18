@@ -5,6 +5,13 @@ description: Statistical arbitrage tool for identifying and analyzing pair tradi
 
 # Pair Trade Screener
 
+> **NEPSE applicability:** US-market only. NEPSE listing-level daily
+> turnover is too thin to maintain a market-neutral stat-arb pair —
+> single-name liquidity gaps would routinely blow through any spread
+> hedge. NEPSE also forbids short selling, eliminating the short leg
+> of a pair trade. No NEPSE port. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md` for details.
+
 ## Overview
 
 This skill identifies and analyzes statistical arbitrage opportunities through pair trading. Pair trading is a market-neutral strategy that profits from the relative price movements of two correlated securities, regardless of overall market direction. The skill uses rigorous statistical methods including correlation analysis and cointegration testing to find robust trading pairs.

@@ -5,6 +5,14 @@ description: Use this skill to track institutional investor ownership changes an
 
 # Institutional Flow Tracker
 
+> **NEPSE applicability:** US-market only. The skill relies on US SEC
+> 13F filings, which have no equivalent in Nepal — SEBON's disclosure
+> regime does not aggregate institutional positioning at a similar
+> level. NEPSE traders proxy institutional flow via the floorsheet
+> (large single-trade prints) — `nepse-edge-candidate-agent` uses
+> floorsheet-derived signals where applicable. See
+> `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md`.
+
 ## Overview
 
 This skill tracks institutional investor activity through 13F SEC filings to identify "smart money" flows into and out of stocks. By analyzing quarterly changes in institutional ownership, you can discover stocks that sophisticated investors are accumulating before major price moves, or identify potential risks when institutions are reducing positions.

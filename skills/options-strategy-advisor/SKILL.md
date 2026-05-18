@@ -5,6 +5,12 @@ description: Options trading strategy analysis and simulation tool. Provides the
 
 # Options Strategy Advisor
 
+> **NEPSE applicability:** US-market only. NEPSE does not have a liquid
+> listed-options market, so this skill has no NEPSE port. NEPSE traders
+> use `nepse-margin-eligibility` (Phase 3, April 2026) for leverage
+> instead. See `~/.claude/plans/i-want-to-adapt-dynamic-goblet.md` for
+> the full adaptation rationale.
+
 ## Overview
 
 This skill provides comprehensive options strategy analysis and education using theoretical pricing models. It helps traders understand, analyze, and simulate options strategies without requiring real-time market data subscriptions.
