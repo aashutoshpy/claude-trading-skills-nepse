@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  SETUP: Replace $HOME and $PROJECT_DIR before installing.
+
+    # 1) Render the template with your paths
+    sed "s|\$HOME|$HOME|g; s|\$PROJECT_DIR|$(pwd)|g" \
+      launchd/com.nepse.fetch-daily.plist \
+      > ~/Library/LaunchAgents/com.nepse.fetch-daily.plist
+
+    # 2) Activate
+    launchctl load ~/Library/LaunchAgents/com.nepse.fetch-daily.plist
+
+    # 3) Disable later if needed
+    launchctl unload ~/Library/LaunchAgents/com.nepse.fetch-daily.plist
+
+  WHAT THIS DOES:
+    Runs scripts/fetch_nepse_snapshot.py once per day at 15:30 NPT
+    (= 09:45 UTC). Pulls today's OHLCV for all ~330 NEPSE symbols from
+    sharesansar's public /today-share-price page. Appends to
+    data/ohlcv/<SYMBOL>.csv (de-duplicated by date). After ~200 trading
+    days you'll have enough history for VCP screening.
+
+  NOTES:
+    - HOST_NAME assumed to be in NPT (UTC+5:45). On a US/EU laptop the
+      effective fire time is whatever 09:45 UTC translates to locally.
+      Adjust StartCalendarInterval if your laptop is in a different tz.
+    - If your laptop is asleep at 09:45 UTC, launchd fires the job when
+      it next wakes (no missed run).
+-->
+<dict>
+	<key>Label</key>
+	<string>com.nepse.fetch-daily</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/env</string>
+		<string>python3</string>
+		<string>$PROJECT_DIR/scripts/fetch_nepse_snapshot.py</string>
+	</array>
+
+	<key>WorkingDirectory</key>
+	<string>$PROJECT_DIR</string>
+
+	<!-- 09:45 UTC ≈ 15:30 NPT, just after market close (15:00 NPT). -->
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>9</integer>
+		<key>Minute</key>
+		<integer>45</integer>
+	</dict>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin</string>
+		<key>HOME</key>
+		<string>$HOME</string>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>$PROJECT_DIR/logs/launchd_nepse_fetch.log</string>
+
+	<key>StandardErrorPath</key>
+	<string>$PROJECT_DIR/logs/launchd_nepse_fetch_error.log</string>
+
+	<key>RunAtLoad</key>
+	<false/>
+</dict>
+</plist>

@@ -162,17 +162,64 @@ You'll notice the `constituents:` block in `config/registry.yaml` is empty. **Le
 
 The 13 sector IDs are: `BANKING`, `DEVELOPMENT_BANK`, `FINANCE`, `MICROFINANCE`, `HYDROPOWER`, `LIFE_INSURANCE`, `NON_LIFE_INSURANCE`, `HOTELS`, `MANUFACTURING`, `TRADING`, `MUTUAL_FUNDS`, `INVESTMENT`, `OTHERS`. They're UPPER_SNAKE and case-sensitive.
 
-### 1.6 Build up your OHLCV history (the daily fetcher)
+### 1.6 Build up your OHLCV history
 
-The VCP screener needs **200+ trading days** of OHLCV per name to detect a base. You build that history one day at a time with:
+The VCP screener needs **~200 trading days** of OHLCV per name to detect a base. You have three paths to get there:
+
+#### Path A — Daily forward accumulation (set-and-forget)
 
 ```bash
 python3 scripts/fetch_nepse_snapshot.py
 ```
 
-This scrapes sharesansar's public `/today-share-price` page (no anti-bot, no auth) and appends today's OHLCV row to `data/ohlcv/<SYMBOL>.csv` for every actively-trading NEPSE symbol (~330 names on a normal day). Also writes `data/constituents.csv`. Re-running on the same day is a no-op (de-duplicated by date).
+Scrapes sharesansar's public `/today-share-price` page (no anti-bot, no auth) and appends today's OHLCV row to `data/ohlcv/<SYMBOL>.csv` for every actively-trading NEPSE symbol (~330 on a normal day). Re-running same-day is a no-op (de-duplicated by date). After ~200 trading days you have a full base.
 
-Run it once daily after market close (after 15:00 NPT, before midnight). After ~200 trading days you'll have enough history for VCP screening. To bootstrap faster, paste historical OHLCV into the CSVs from any source you trust (broker statement, sharesansar's per-company "Price History" tab, broker export, Google Sheet). Schema:
+**Automate it with launchd** (macOS) so you don't have to remember:
+
+```bash
+sed "s|\$HOME|$HOME|g; s|\$PROJECT_DIR|$(pwd)|g" \
+  launchd/com.nepse.fetch-daily.plist \
+  > ~/Library/LaunchAgents/com.nepse.fetch-daily.plist
+launchctl load ~/Library/LaunchAgents/com.nepse.fetch-daily.plist
+```
+
+Fires at 09:45 UTC daily (= 15:30 NPT, just after market close). Logs to `logs/launchd_nepse_fetch.log`.
+
+Fetcher flags:
+
+| Flag | Purpose |
+|---|---|
+| `--data-dir custom/path` | Override data root (default: `data/`) |
+| `--symbols NABIL UPPER NICA` | Only fetch listed symbols |
+| `--as-of 2026-05-17` | Date label to write (defaults to today) |
+| `--dry-run` | Print what would change; no writes |
+
+#### Path B — Backfill history per name (paste-from-browser)
+
+To screen NABIL today instead of in 10 months, get its history *now*:
+
+1. Open `https://www.sharesansar.com/company/NABIL` in your browser
+2. Click the **Price History** tab — sharesansar renders 100–200 days of OHLCV in a table
+3. Select all rows in the table, copy
+4. Pipe into the importer:
+
+```bash
+# macOS — copy first, then:
+pbpaste | python3 scripts/import_ohlcv_from_table.py --symbol NABIL
+
+# Or save the paste to a file, then:
+python3 scripts/import_ohlcv_from_table.py --symbol NABIL --input nabil.tsv
+```
+
+The importer is forgiving — tab/comma/whitespace-separated, header row optional, tolerates extra columns (turnover, % change, etc.). Merges into `data/ohlcv/NABIL.csv`, de-duped by date.
+
+Repeat for each name in your watchlist (~26 names × 30 sec = 15 min one-time setup). Then re-run path A daily on top to keep it fresh.
+
+#### Path C — Drop in your broker's CSV / a Google Sheet export
+
+Any CSV with columns `date,open,high,low,close,volume,prev_close` (extras tolerated) dropped at `data/ohlcv/<SYMBOL>.csv` is read directly by the CSV backend. Use this if you have a broker statement export or a community-maintained dataset.
+
+#### Required schema
 
 ```
 date,open,high,low,close,volume,prev_close
@@ -180,14 +227,7 @@ date,open,high,low,close,volume,prev_close
 2026-05-17,1170.00,1196.00,1165.00,1180.00,61200,1175.00
 ```
 
-The fetcher accepts these flags:
-
-| Flag | Purpose |
-|---|---|
-| `--data-dir custom/path` | Override the data root (default: `data/`) |
-| `--symbols NABIL UPPER NICA` | Only fetch listed symbols |
-| `--as-of 2026-05-17` | Date label to write (defaults to today) |
-| `--dry-run` | Print what would change; no writes |
+Date in ISO format. Order doesn't matter — backend sorts. `prev_close` optional.
 
 ### 1.7 Smoke test the screener
 
