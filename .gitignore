@@ -41,3 +41,9 @@ state/
 htmlcov/
 .coverage
 # .secrets.baseline is tracked — needed by detect-secrets pre-commit hook
+
+# CSV OHLCV cache populated by `scripts/fetch_nepse_snapshot.py` — user data.
+data/ohlcv/
+data/indexes/
+data/floorsheet/
+data/constituents.csv

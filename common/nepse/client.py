@@ -118,8 +118,12 @@ class NepseClient:
         if name in ("community", "community_lib", "lib"):
             from common.nepse.backends.community_lib import CommunityLibBackend
             return cls(CommunityLibBackend())
+        if name in ("csv", "csv_file", "file", "offline"):
+            from common.nepse.backends.csv_file import CsvFileBackend
+            return cls(CsvFileBackend())
         raise NepseConfigError(
-            f"Unknown NEPSE backend: {name!r}. Supported: 'nepalstock', 'community'."
+            f"Unknown NEPSE backend: {name!r}. "
+            "Supported: 'nepalstock', 'community', 'csv'."
         )
 
     # ---- pass-through methods (a thin facade so we can add logging

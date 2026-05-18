@@ -93,18 +93,23 @@ You should see **57 tests pass** in well under a second. If they pass, the NEPSE
 
 ### 1.4 Pick a backend
 
-A *backend* is the thing that fetches NEPSE data. There are two:
+A *backend* is the thing that fetches NEPSE data. Three exist:
 
-| Backend | Setup | Use when |
+| Backend | Status (May 2026) | Setup |
 |---|---|---|
-| `nepalstock` (default) | Already installed | Default. Scrapes `nepalstock.com.np`. No extra dependency. |
-| `community` | `pip install nepse-api` | The default scraper breaks (e.g., NEPSE redesigns their site). |
+| `csv` **(recommended)** | Works offline against local CSVs you populate via the daily fetcher (next section). | None — built in. |
+| `nepalstock` | Broken — server has an incomplete TLS chain *and* returns 401 to direct API calls (anti-bot). Shipped for the day they fix it. | None. `NEPSE_INSECURE_TLS=1` gets past TLS but not the 401. |
+| `community` | Broken — the only PyPI lib (`nepse-api 1.x`) depends on a 3rd-party token service (`samrid.me`) and a domain (`newweb.nepalstock.com`) that have both been offline. | `pip install nepse-api` (won't work, but documented). |
 
-You don't have to pick now — `nepalstock` is the default. If a script fails with a "backend error", switch:
+**Use `csv`** by default until live-fetch backends become viable again:
 
 ```bash
-NEPSE_BACKEND=community python3 ...
+export NEPSE_BACKEND=csv
 ```
+
+The CSV backend reads from `data/ohlcv/<SYMBOL>.csv` files. The fetcher
+(introduced next) populates them by scraping sharesansar's public
+`/today-share-price` page once per trading day.
 
 ### 1.5 Pick a watchlist + (optionally) tune the margin list
 
@@ -157,7 +162,34 @@ You'll notice the `constituents:` block in `config/registry.yaml` is empty. **Le
 
 The 13 sector IDs are: `BANKING`, `DEVELOPMENT_BANK`, `FINANCE`, `MICROFINANCE`, `HYDROPOWER`, `LIFE_INSURANCE`, `NON_LIFE_INSURANCE`, `HOTELS`, `MANUFACTURING`, `TRADING`, `MUTUAL_FUNDS`, `INVESTMENT`, `OTHERS`. They're UPPER_SNAKE and case-sensitive.
 
-### 1.6 Smoke test the screener
+### 1.6 Build up your OHLCV history (the daily fetcher)
+
+The VCP screener needs **200+ trading days** of OHLCV per name to detect a base. You build that history one day at a time with:
+
+```bash
+python3 scripts/fetch_nepse_snapshot.py
+```
+
+This scrapes sharesansar's public `/today-share-price` page (no anti-bot, no auth) and appends today's OHLCV row to `data/ohlcv/<SYMBOL>.csv` for every actively-trading NEPSE symbol (~330 names on a normal day). Also writes `data/constituents.csv`. Re-running on the same day is a no-op (de-duplicated by date).
+
+Run it once daily after market close (after 15:00 NPT, before midnight). After ~200 trading days you'll have enough history for VCP screening. To bootstrap faster, paste historical OHLCV into the CSVs from any source you trust (broker statement, sharesansar's per-company "Price History" tab, broker export, Google Sheet). Schema:
+
+```
+date,open,high,low,close,volume,prev_close
+2026-05-18,1180.00,1212.00,1175.00,1207.50,84320,1180.00
+2026-05-17,1170.00,1196.00,1165.00,1180.00,61200,1175.00
+```
+
+The fetcher accepts these flags:
+
+| Flag | Purpose |
+|---|---|
+| `--data-dir custom/path` | Override the data root (default: `data/`) |
+| `--symbols NABIL UPPER NICA` | Only fetch listed symbols |
+| `--as-of 2026-05-17` | Date label to write (defaults to today) |
+| `--dry-run` | Print what would change; no writes |
+
+### 1.7 Smoke test the screener
 
 Run the VCP screener on a handful of names from your watchlist:
 
@@ -213,15 +245,21 @@ Each writes a `.md` + `.json` pair to `reports/`. Open the three `.md` files and
 
 ### Step 2 — Screen for candidates (~5 min)
 
-Only if regime was *go*. Run the VCP screener against your watchlist:
+Only if regime was *go*. First, append today's OHLCV (skip on weekends/holidays):
 
 ```bash
-python3 skills/nepse-vcp-screener/scripts/screen_nepse_vcp.py \
+python3 scripts/fetch_nepse_snapshot.py
+```
+
+Then run the VCP screener against your watchlist:
+
+```bash
+NEPSE_BACKEND=csv python3 skills/nepse-vcp-screener/scripts/screen_nepse_vcp.py \
   --symbols $(cat data/nepse_starter_watchlist.txt | tr '\n' ' ') \
   --output-dir reports/
 ```
 
-The `$(cat ... | tr '\n' ' ')` part expands the plaintext watchlist into a space-separated symbol list. If you'd rather run the screener across the full backend universe (slower but more thorough), drop the `--symbols` flag entirely.
+The `$(cat ... | tr '\n' ' ')` part expands the plaintext watchlist into a space-separated symbol list. Drop the `--symbols` flag to screen the full universe (all symbols that have ≥200 days of cached history).
 
 Open `reports/nepse_vcp_<today>.md`. You'll see a ranked list of names with **VCP setups** — Volatility Contraction Patterns, a classic Mark Minervini setup where price tightens into a base before breaking out.
 
@@ -590,7 +628,7 @@ The vocabulary you'll see in reports, in order of how often it shows up.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| "Screener returned 0 candidates" | Either: backend can't reach NEPSE (no symbols at all); or `--symbols` was empty/wrong; or there really are no setups today | Run with `--symbols NABIL UPPER NICA` to isolate; if still empty, try `NEPSE_BACKEND=community`. Setup-empty days are normal in weak regimes. |
+| "Screener returned 0 candidates" | With `csv` backend: not enough history yet (VCP needs ~200 days); the per-symbol CSV is short. Otherwise: `--symbols` was empty/wrong, or there are genuinely no setups today. | If you just installed the repo, you need to run `scripts/fetch_nepse_snapshot.py` daily for ~200 trading days OR paste historical OHLCV into the CSVs manually. Setup-empty days are normal in weak regimes. |
 | `ModuleNotFoundError: No module named 'yaml'` | Dependencies not installed | `pip install -e .` from the repo root |
 | `python3: command not found` | Python not installed or not on PATH | Install from [python.org](https://www.python.org/downloads/), restart terminal |
 | Backend timeout / scraper error | NEPSE site changed or is down | `NEPSE_BACKEND=community python3 ...` (install with `pip install nepse-api` first) |

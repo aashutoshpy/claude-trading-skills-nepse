@@ -174,12 +174,13 @@ When you edit this file, also append a one-line entry to [`common/nepse/referenc
 
 ### Backend selection
 
-| Backend | When to use | Setup |
-|---|---|---|
-| `nepalstock` (default) | Most uses; no third-party dependency | None — works out of the box |
-| `community` | Fall-back when the scraper breaks after a site redesign | `pip install nepse-api` (or similar) |
+| Backend | Status (May 2026) | When to use | Setup |
+|---|---|---|---|
+| `csv` | **Works.** Reads OHLCV from local CSVs you populate via the daily fetcher. | Default recommendation today. | `python3 scripts/fetch_nepse_snapshot.py` daily; build up history. |
+| `nepalstock` | **Broken.** Server has an incomplete TLS chain *and* returns 401 to direct API calls (anti-bot). | Shipped for the day they fix their auth surface. | None. `NEPSE_INSECURE_TLS=1` gets past TLS but not the 401. |
+| `community` | **Broken.** The only PyPI lib (`nepse-api 1.x`) targets dead URLs (`newweb.nepalstock.com` + `samrid.me`). | n/a until someone publishes a working lib. | `pip install nepse-api` (won't fetch data). |
 
-Set via `NEPSE_BACKEND=nepalstock\|community` env var, or pass `--backend` to any CLI.
+Set via `NEPSE_BACKEND=csv\|nepalstock\|community` env var, or pass `--backend` to any CLI. See [`GETTING_STARTED.md`](GETTING_STARTED.md) §1.4–§1.6 for the daily fetcher workflow.
 
 ### Per-skill inputs
 
@@ -240,7 +241,7 @@ Expected: **274 tests pass** in well under a second; validator and drift gate bo
 
 Known constraints and known-unknowns — read before relying on outputs for sizing decisions:
 
-1. **`nepalstock.com.np` scraper backend is not operationally functional against the live site as of 2026-05-18.** The server presents an incomplete TLS chain AND returns `401 UNAUTHORIZED ACCESS` for direct API calls (anti-bot defense — CSRF tokens, etc.). Use `NEPSE_BACKEND=community` (after `pip install nepse-api`) for live data. `NEPSE_INSECURE_TLS=1` solves only the TLS half. Fixing the scraper to handle the 401 (CSRF token flow, session warmup) is a separate engineering effort.
+1. **Live-fetch backends (`nepalstock`, `community`) are both broken as of 2026-05-18.** The default `nepalstock` scraper hits an incomplete TLS chain plus 401 anti-bot rejection; the `community` lib (`nepse-api 1.x` on PyPI) depends on `samrid.me` and `newweb.nepalstock.com`, both offline. **Use `NEPSE_BACKEND=csv` with `scripts/fetch_nepse_snapshot.py`** which scrapes sharesansar's public HTML table — see [GETTING_STARTED.md](GETTING_STARTED.md) §1.4–§1.6.
 2. **`Registry.constituents` and `margin_eligible_symbols` are empty seeds.** Populate via the (planned) `scripts/refresh_nepse_registry.py` or by hand. Until populated, universe-driven skills return empty results.
 3. **`_INDEX_IDS` map uses placeholder numeric IDs.** Verify against the live site for `nepse-sector-analyst` and `nepse-ibd-distribution-day-monitor`.
 4. **No machine-readable fundamentals or dividend feed for NEPSE.** Skills that need them accept user-maintained CSVs (see *Per-skill inputs* above).
