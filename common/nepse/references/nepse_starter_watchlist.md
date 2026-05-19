@@ -1,19 +1,37 @@
-# NEPSE Starter Watchlist
+# NEPSE Watchlist
 
-A curated list of 26 NEPSE-listed companies you can use to start running screeners and chart-checking before you've built your own watchlist of ~50–100 names.
+The plaintext file [`data/nepse_starter_watchlist.txt`](../../../data/nepse_starter_watchlist.txt) holds NEPSE symbols, one per line. Originally shipped as a 26-name *starter* set across the 13 sectors. **As of 2026-05-18 it was expanded to the full ~350-symbol NEPSE universe** (all symbols visible in `data/constituents.csv` after the daily fetcher's first run).
 
-> **Important — knowledge-cutoff caveat:** these names were prominent NEPSE blue chips through early 2026. Listings, mergers, delistings, and trading-status flags may have changed since. Before relying on any of them, spot-check on [sharesansar.com](https://www.sharesansar.com) → search → Company Profile (still listed? still trading?). If a name has been delisted or merged, drop it from your watchlist.
+> **Important — knowledge-cutoff caveat:** the original curated 26 names were prominent NEPSE blue chips through early 2026. The expanded list mirrors whatever sharesansar's `/today-share-price` page returned at the time of regeneration. Listings, mergers, delistings, and trading-status changes are reflected automatically when you re-run the regenerator.
+
+---
+
+## How to refresh
+
+The file is generated from `data/constituents.csv`, which the daily fetcher (`scripts/fetch_nepse_snapshot.py`) maintains. To rebuild the watchlist with the current universe:
+
+```python
+import csv
+from pathlib import Path
+symbols = sorted({
+    (row.get("symbol") or "").strip().upper()
+    for row in csv.DictReader(Path("data/constituents.csv").open())
+    if (row.get("symbol") or "").strip()
+})
+Path("data/nepse_starter_watchlist.txt").write_text("\n".join(symbols) + "\n")
+```
+
+The watchlist updates organically as new IPOs list (they appear in next-day MeroShare/sharesansar snapshots → into `constituents.csv` → into the watchlist on next regeneration).
 
 ---
 
 ## What this list is (and isn't)
 
-**It IS:** a starter set of 26 well-diversified NEPSE names across 10 of the 13 sectors. These are companies with historically strong daily turnover and broad investor interest — the kind of names you'll see referenced in every NEPSE chat, every brokerage report, every news article. Good candidates to *practice* screening, charting, and trade planning on.
+**It IS:** the operational NEPSE universe — every symbol your screeners can consider. Most screening skills filter internally by liquidity and history-length, so passing the full list is safe.
 
 **It is NOT:**
-- A buy list. Inclusion here means "liquid enough to look at," not "good to buy today."
-- A complete universe. NEPSE has ~284 listed companies; this is 26.
-- A registry edit. The `constituents:` block in [`config/registry.yaml`](../../../config/registry.yaml) is not parsed by the foundation code — the universe comes from the backend (`NepseClient.list_constituents()`). This list is what you'd pass to screener `--symbols` flags.
+- A buy list. Inclusion here means "trades on NEPSE," not "good to buy today."
+- A registry edit. The `constituents:` block in [`config/registry.yaml`](../../../config/registry.yaml) is not parsed by the foundation code — the universe comes from the backend (`NepseClient.list_constituents()`). This file is what you'd pass to screener `--symbols` flags.
 
 ---
 
